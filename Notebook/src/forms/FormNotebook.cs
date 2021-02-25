@@ -705,7 +705,6 @@ namespace Notebook
             this.treeView.LabelEdit = false;
         }
 
-
         private void treeView_DragOver(object sender, DragEventArgs e)
         {
             Point targetPoint = treeView.PointToClient(new Point(e.X, e.Y));
@@ -1199,46 +1198,6 @@ namespace Notebook
             }
         }
 
-        private void renameToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            TabPage selected = tabControl.SelectedTab;
-
-            if (selected == null)
-            {
-                return;
-            }
-
-            TabData tadData = (TabData)selected.Tag;
-
-            FormRename formRename = new FormRename();
-
-            this.enablePin = false;
-
-            formRename.text = tadData.name;
-
-            formRename.startLocation = new Point(Cursor.Position.X - 100, Cursor.Position.Y - 100);
-
-            formRename.ShowDialog();
-
-            if (formRename.saved) {
-                this.renameTab(formRename.text, selected);
-            }
-
-            this.enablePin = true;
-        }
-
-        private void closeToolStripMenuItem2_Click(object sender, EventArgs e)
-        {
-            TabPage selected = tabControl.SelectedTab;
-
-            if (selected == null)
-            {
-                return;
-            }
-
-            this.closeTab(selected);
-        }
-
         private int getHoverTabIndex(TabControl tc)
         {
             for (int i = 0; i < tc.TabPages.Count; i++)
@@ -1354,6 +1313,69 @@ namespace Notebook
             e.Graphics.DrawString("❌", e.Font, Brushes.Black, e.Bounds.Right - 25, e.Bounds.Top + 4);
 
             e.DrawFocusRectangle();
+        }
+
+        // TABS MENU
+
+        private void locateToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TabPage selected = tabControl.SelectedTab;
+
+            if (selected == null)
+            {
+                return;
+            }
+
+            TabData tadData = (TabData)selected.Tag;
+
+
+            if (tadData.node == null) {
+                return;
+            }
+
+            this.treeView.SelectedNode = tadData.node;
+            tadData.node.EnsureVisible();
+        }
+
+        private void renameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TabPage selected = tabControl.SelectedTab;
+
+            if (selected == null)
+            {
+                return;
+            }
+
+            TabData tadData = (TabData)selected.Tag;
+
+            FormRename formRename = new FormRename();
+
+            this.enablePin = false;
+
+            formRename.text = tadData.name;
+
+            formRename.startLocation = new Point(Cursor.Position.X - 100, Cursor.Position.Y - 100);
+
+            formRename.ShowDialog();
+
+            if (formRename.saved)
+            {
+                this.renameTab(formRename.text, selected);
+            }
+
+            this.enablePin = true;
+        }
+
+        private void closeToolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            TabPage selected = tabControl.SelectedTab;
+
+            if (selected == null)
+            {
+                return;
+            }
+
+            this.closeTab(selected);
         }
 
 
@@ -1504,6 +1526,7 @@ namespace Notebook
                 this.GoToPositionInTab(result.position, result.node);
             }
         }
+
 
     }
 }
