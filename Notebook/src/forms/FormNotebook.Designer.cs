@@ -242,7 +242,7 @@ namespace Notebook
             this.renameToolStripMenuItem,
             this.closeToolStripMenuItem2});
             this.contextMenuStripTabs.Name = "contextMenuStripTabs";
-            this.contextMenuStripTabs.Size = new System.Drawing.Size(181, 70);
+            this.contextMenuStripTabs.Size = new System.Drawing.Size(118, 48);
             // 
             // renameToolStripMenuItem
             // 
@@ -301,7 +301,6 @@ namespace Notebook
             // 
             // timer
             // 
-            this.timer.Enabled = true;
             this.timer.Interval = 50000;
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 

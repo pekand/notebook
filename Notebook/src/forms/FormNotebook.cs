@@ -187,11 +187,19 @@ namespace Notebook
             this.Text = "Notebook" + (this.modified ? "*" : "");
         }
 
+
+        private void autosaveTimer() {
+            timer.Enabled = false;
+            timer.Interval = 50000;
+            timer.Enabled = true;
+        }
+
         private void Modified() {
 
             if (!this.modified) {
                 this.modified = true;
                 this.SetTitle();
+                this.autosaveTimer();
             }
             
         }
@@ -1321,6 +1329,8 @@ namespace Notebook
             if (this.modified) {
                 this.saveConfig();
             }
+
+            timer.Enabled = false;
         }
 
         // SEARCH
