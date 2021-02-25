@@ -127,10 +127,8 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Note.ico" />
     <Content Include="notebook.ico" />
     <None Include="notebook.png" />
-    <None Include="Note5.png" />
     <None Include="Note.png" />
     <None Include="Resources\Notebook.bmp" />
   </ItemGroup>

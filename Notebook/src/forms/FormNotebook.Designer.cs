@@ -55,6 +55,7 @@ namespace Notebook
             this.tabPageEdit = new System.Windows.Forms.TabPage();
             this.scintilla1 = new ScintillaNET.Scintilla();
             this.timer = new System.Windows.Forms.Timer(this.components);
+            this.imageListTree = new System.Windows.Forms.ImageList(this.components);
             this.menuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
             this.splitContainer.Panel1.SuspendLayout();
@@ -145,8 +146,11 @@ namespace Notebook
             this.treeView.ContextMenuStrip = this.contextMenuStripTree;
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Font = new System.Drawing.Font("Consolas", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.treeView.ImageIndex = 0;
+            this.treeView.ImageList = this.imageListTree;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
+            this.treeView.SelectedImageIndex = 0;
             this.treeView.Size = new System.Drawing.Size(200, 609);
             this.treeView.TabIndex = 0;
             this.treeView.BeforeLabelEdit += new System.Windows.Forms.NodeLabelEditEventHandler(this.treeView_BeforeLabelEdit);
@@ -247,14 +251,14 @@ namespace Notebook
             // renameToolStripMenuItem
             // 
             this.renameToolStripMenuItem.Name = "renameToolStripMenuItem";
-            this.renameToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.renameToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
             this.renameToolStripMenuItem.Text = "Rename";
             this.renameToolStripMenuItem.Click += new System.EventHandler(this.renameToolStripMenuItem_Click);
             // 
             // closeToolStripMenuItem2
             // 
             this.closeToolStripMenuItem2.Name = "closeToolStripMenuItem2";
-            this.closeToolStripMenuItem2.Size = new System.Drawing.Size(180, 22);
+            this.closeToolStripMenuItem2.Size = new System.Drawing.Size(117, 22);
             this.closeToolStripMenuItem2.Text = "Close";
             this.closeToolStripMenuItem2.Click += new System.EventHandler(this.closeToolStripMenuItem2_Click);
             // 
@@ -303,6 +307,14 @@ namespace Notebook
             // 
             this.timer.Interval = 50000;
             this.timer.Tick += new System.EventHandler(this.timer_Tick);
+            // 
+            // imageListTree
+            // 
+            this.imageListTree.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageListTree.ImageStream")));
+            this.imageListTree.TransparentColor = System.Drawing.Color.Transparent;
+            this.imageListTree.Images.SetKeyName(0, "notebook.ico");
+            this.imageListTree.Images.SetKeyName(1, "note.png");
+            this.imageListTree.Images.SetKeyName(2, "folder.png");
             // 
             // FormNotebook
             // 
@@ -364,6 +376,7 @@ namespace Notebook
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem expandToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem collapseToolStripMenuItem1;
+        private System.Windows.Forms.ImageList imageListTree;
     }
 }
 

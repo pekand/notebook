@@ -496,8 +496,12 @@ namespace Notebook
         {
             string name = "Notebook";
             TreeNode root = this.addNewNode(name);
+            root.ImageIndex = 0;
+            root.SelectedImageIndex = 0;
+            root.ImageKey = "notebook.ico";
             TreeData treeData = (TreeData)root.Tag;
             treeData.isroot = true;
+
 
             treeView.Nodes.Add(root);
 
@@ -512,6 +516,9 @@ namespace Notebook
             treeData.name = name;
             node.Tag = treeData;
             node.Text = name;
+            node.ImageIndex = 1;
+            node.SelectedImageIndex = 1;
+            node.ImageKey = "note.png";
 
             if (parent != null)
             {

@@ -254,6 +254,10 @@ namespace Notebook
                 if (nodesElement.Name.ToString() == "node" && nodesElement.HasElements)
                 {
                     TreeNode treeNode = new TreeNode();
+                    treeNode.ImageIndex = 1;
+                    treeNode.SelectedImageIndex = 1;
+                    treeNode.ImageKey = "note.png";
+
                     TreeData treeData = new TreeData();
                     treeNode.Tag = treeData;
 
@@ -287,11 +291,24 @@ namespace Notebook
                         if (nodeElement.Name.ToString() == "isroot")
                         {
                             treeData.isroot = nodeElement.Value == "1";
+
+                            if (treeData.isroot)
+                            {
+                                treeNode.ImageIndex = 0;
+                                treeNode.SelectedImageIndex = 0;
+                                treeNode.ImageKey = "notebook.ico";
+                            }
                         }
 
                         if (nodeElement.Name.ToString() == "folder")
                         {
                             treeData.folder = nodeElement.Value == "1";
+
+                            if (treeData.folder) { 
+                                treeNode.ImageIndex = 2;
+                                treeNode.SelectedImageIndex = 2;
+                                treeNode.ImageKey = "folder.png";
+                            }
                         }
 
                         if (nodeElement.Name.ToString() == "note")
