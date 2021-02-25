@@ -15,6 +15,7 @@ namespace Notebook
         public string text = "";
         public bool cancled = false;
         public bool saved = false;
+        public Point startLocation;
 
         public FormRename()
         {
@@ -28,7 +29,10 @@ namespace Notebook
 
             textBox.Text = text;
 
+            this.Location = startLocation;
+
             textBox.Focus();
+
         }
 
         private void buttonClose_Click(object sender, EventArgs e)

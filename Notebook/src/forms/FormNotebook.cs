@@ -379,6 +379,7 @@ namespace Notebook
             }
 
             formSearch = new FormSearch(searchFor);
+            formSearch.startLocation = new Point(Cursor.Position.X - 100, Cursor.Position.Y-100);
             formSearch.Owner = this;
             formSearch.Show();
         }
@@ -387,6 +388,18 @@ namespace Notebook
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            if (keyData == (Keys.Control | Keys.W))
+            {
+
+                TabPage tab = tabControl.SelectedTab;
+
+                if (tab != null)
+                {
+                    this.closeTab(tab);
+                }
+            }
+
+
             if (keyData == (Keys.Shift | Keys.F3))
             {
                 if (this.formSearch != null) 
@@ -941,6 +954,22 @@ namespace Notebook
             }
         }
 
+        private void expandToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (treeView.SelectedNode != null)
+            {
+                treeView.SelectedNode.ExpandAll();
+            }
+        }
+
+        private void collapseToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (treeView.SelectedNode != null)
+            {
+                treeView.SelectedNode.Collapse();
+            }
+        }
+
         // TABS
 
         public List<TabData> getAllTabsData()
@@ -964,8 +993,6 @@ namespace Notebook
             return treeData;
         }
 
-
-    
         private const int EM_SETTABSTOPS = 0x00CB;
 
         [DllImport("User32.dll", CharSet = CharSet.Auto)]
@@ -1017,6 +1044,9 @@ namespace Notebook
             tabData.textBox.Styles[Style.Default].Size = 16;
             //tabData.textBox.Styles[Style.Default].BackColor = IntToColor(0x212121);
             //tabData.textBox.Styles[Style.Default].ForeColor = IntToColor(0xFFFFFF);
+            tabData.textBox.AssignCmdKey(Keys.Control | Keys.W, Command.Null);
+
+
             tabData.textBox.EmptyUndoBuffer();
             tabData.textBox.StyleClearAll();
 
@@ -1124,6 +1154,9 @@ namespace Notebook
             this.enablePin = false;
 
             formRename.text = tadData.name;
+
+            formRename.startLocation = new Point(Cursor.Position.X - 100, Cursor.Position.Y - 100);
+
             formRename.ShowDialog();
 
             if (formRename.saved) {
@@ -1188,10 +1221,6 @@ namespace Notebook
 
         private void tabControl_MouseMove(object sender, MouseEventArgs e)
         {
-
-            
-
-
             // mouse button down? tab was clicked?
             TabControl tc = (TabControl)sender;
             if ((e.Button != MouseButtons.Left) || (tc.Tag == null)) return;
@@ -1207,14 +1236,6 @@ namespace Notebook
             // clear stored tab
             TabControl tc = (TabControl)sender;
             tc.Tag = null;
-
-            /*for (int i = 0; i < tabControl.TabCount; ++i)
-            {
-                if (tabControl.GetTabRect(i).Contains(e.Location))
-                {
-                    this.selectTab((TabPage)tabControl.Controls[i]);
-                }
-            }*/
         }
 
         private void tabControl_DragOver(object sender, DragEventArgs e)
@@ -1292,7 +1313,6 @@ namespace Notebook
                 this.Modified();
             }
         }
-
 
         // TIMER
 

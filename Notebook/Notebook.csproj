@@ -35,7 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Note.ico</ApplicationIcon>
+    <ApplicationIcon>notebook.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ScintillaNET, Version=3.6.3.0, Culture=neutral, processorArchitecture=MSIL">
@@ -128,6 +128,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Note.ico" />
+    <Content Include="notebook.ico" />
+    <None Include="notebook.png" />
     <None Include="Note5.png" />
     <None Include="Note.png" />
     <None Include="Resources\Notebook.bmp" />

@@ -14,6 +14,8 @@ namespace Notebook
     {
 
         private string startSearchFor = "";
+
+        public Point startLocation;
         public FormSearch(string startSearchFor = "")
         {
 
@@ -31,6 +33,8 @@ namespace Notebook
                 textBoxSearch.Text = this.startSearchFor;
                 this.search(this.textBoxSearch.Text);
             }
+
+            this.Location = startLocation;
         }
 
         private void buttonSearch_Click(object sender, EventArgs e)
