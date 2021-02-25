@@ -56,6 +56,10 @@ namespace Notebook
             this.scintilla1 = new ScintillaNET.Scintilla();
             this.timer = new System.Windows.Forms.Timer(this.components);
             this.imageListTree = new System.Windows.Forms.ImageList(this.components);
+            this.typeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
+            this.folderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.noteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
             this.splitContainer.Panel1.SuspendLayout();
@@ -171,13 +175,15 @@ namespace Notebook
             // 
             this.contextMenuStripTree.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.addNoteToolStripMenuItem,
+            this.renameToolStripMenuItem1,
+            this.typeToolStripMenuItem,
+            this.toolStripMenuItem2,
             this.expandToolStripMenuItem1,
             this.collapseToolStripMenuItem1,
-            this.renameToolStripMenuItem1,
             this.toolStripMenuItem1,
             this.removeToolStripMenuItem});
             this.contextMenuStripTree.Name = "contextMenuStripTree";
-            this.contextMenuStripTree.Size = new System.Drawing.Size(120, 120);
+            this.contextMenuStripTree.Size = new System.Drawing.Size(181, 170);
             // 
             // addNoteToolStripMenuItem
             // 
@@ -316,6 +322,34 @@ namespace Notebook
             this.imageListTree.Images.SetKeyName(1, "note.png");
             this.imageListTree.Images.SetKeyName(2, "folder.png");
             // 
+            // typeToolStripMenuItem
+            // 
+            this.typeToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.folderToolStripMenuItem,
+            this.noteToolStripMenuItem});
+            this.typeToolStripMenuItem.Name = "typeToolStripMenuItem";
+            this.typeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.typeToolStripMenuItem.Text = "Type";
+            // 
+            // toolStripMenuItem2
+            // 
+            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(177, 6);
+            // 
+            // folderToolStripMenuItem
+            // 
+            this.folderToolStripMenuItem.Name = "folderToolStripMenuItem";
+            this.folderToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.folderToolStripMenuItem.Text = "Folder";
+            this.folderToolStripMenuItem.Click += new System.EventHandler(this.folderToolStripMenuItem_Click);
+            // 
+            // noteToolStripMenuItem
+            // 
+            this.noteToolStripMenuItem.Name = "noteToolStripMenuItem";
+            this.noteToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.noteToolStripMenuItem.Text = "Note";
+            this.noteToolStripMenuItem.Click += new System.EventHandler(this.noteToolStripMenuItem_Click);
+            // 
             // FormNotebook
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -377,6 +411,10 @@ namespace Notebook
         private System.Windows.Forms.ToolStripMenuItem expandToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem collapseToolStripMenuItem1;
         private System.Windows.Forms.ImageList imageListTree;
+        private System.Windows.Forms.ToolStripMenuItem typeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem folderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem noteToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
     }
 }
 

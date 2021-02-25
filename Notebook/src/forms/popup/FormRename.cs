@@ -47,5 +47,13 @@ namespace Notebook
             this.saved = true;
             this.Close();
         }
+
+        private void textBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.Enter)
+            {
+                buttonSave.PerformClick();
+            }
+        }
     }
 }

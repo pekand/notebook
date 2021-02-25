@@ -705,52 +705,6 @@ namespace Notebook
             this.treeView.LabelEdit = false;
         }
 
-        private void addNoteToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            TreeNode selected = treeView.SelectedNode;
-
-            if (selected == null)
-            {
-                return;
-            }
-
-            this.Modified();
-
-            this.addNewNode("Note", selected);
-        }
-
-        private void removeToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            TreeNode selected = treeView.SelectedNode;
-
-            if (selected == null)
-            {
-                return;
-            }
-
-            TreeData treeDate = (TreeData)selected.Tag;
-
-            if (treeDate.isroot)
-            {
-                return;
-            }
-
-            if (this.canRemoveNode(selected))
-            {
-                this.removeNode(selected);
-
-                if (selected.Parent != null)
-                {
-                    selected.Parent.Nodes.Remove(selected);
-                }
-                else
-                {
-                    treeView.Nodes.Remove(selected);
-                }
-
-            }
-
-        }
 
         private void treeView_DragOver(object sender, DragEventArgs e)
         {
@@ -960,6 +914,56 @@ namespace Notebook
             }
         }
 
+        // TREEVIEW MENU
+
+        private void addNoteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TreeNode selected = treeView.SelectedNode;
+
+            if (selected == null)
+            {
+                return;
+            }
+
+            this.Modified();
+
+            this.addNewNode("Note", selected);
+        }
+
+        private void removeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TreeNode selected = treeView.SelectedNode;
+
+            if (selected == null)
+            {
+                return;
+            }
+
+            TreeData treeDate = (TreeData)selected.Tag;
+
+            if (treeDate.isroot)
+            {
+                return;
+            }
+
+            if (this.canRemoveNode(selected))
+            {
+                this.removeNode(selected);
+
+                if (selected.Parent != null)
+                {
+                    selected.Parent.Nodes.Remove(selected);
+                }
+                else
+                {
+                    treeView.Nodes.Remove(selected);
+                }
+
+            }
+
+        }
+
+
         private void renameToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             if (treeView.SelectedNode != null)
@@ -982,6 +986,48 @@ namespace Notebook
             if (treeView.SelectedNode != null)
             {
                 treeView.SelectedNode.Collapse();
+            }
+        }
+
+        private void folderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (treeView.SelectedNode != null)
+            {
+                TreeData treeData = this.getNodeData(treeView.SelectedNode);
+
+                if (!treeData.isroot && !treeData.folder) {
+                    treeData.folder = true;
+                    treeData.note = false;
+
+                    treeView.SelectedNode.ImageIndex = 2;
+                    treeView.SelectedNode.SelectedImageIndex = 2;
+                    treeView.SelectedNode.ImageKey = "folder.png";
+
+                    this.Modified();
+                }
+
+                
+            }
+        }
+
+        private void noteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (treeView.SelectedNode != null)
+            {
+                TreeData treeData = this.getNodeData(treeView.SelectedNode);
+
+                if (!treeData.isroot && !treeData.note)
+                {
+                    treeData.folder = true;
+                    treeData.note = false;
+
+                    treeView.SelectedNode.ImageIndex = 1;
+                    treeView.SelectedNode.SelectedImageIndex = 1;
+                    treeView.SelectedNode.ImageKey = "note.png";
+                    this.Modified();
+                }
+
+
             }
         }
 
@@ -1458,7 +1504,6 @@ namespace Notebook
                 this.GoToPositionInTab(result.position, result.node);
             }
         }
-
 
     }
 }
