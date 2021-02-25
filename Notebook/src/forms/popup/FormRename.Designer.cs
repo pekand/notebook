@@ -41,6 +41,7 @@ namespace Notebook
             this.textBox.Name = "textBox";
             this.textBox.Size = new System.Drawing.Size(480, 20);
             this.textBox.TabIndex = 0;
+            this.textBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBox_KeyDown);
             // 
             // label1
             // 
@@ -75,7 +76,7 @@ namespace Notebook
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(569, 120);
+            this.ClientSize = new System.Drawing.Size(569, 107);
             this.Controls.Add(this.buttonClose);
             this.Controls.Add(this.buttonSave);
             this.Controls.Add(this.label1);
