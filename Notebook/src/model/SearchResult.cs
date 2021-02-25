@@ -41,7 +41,7 @@ namespace Notebook
 
                 if (start + length > nodeText.Length)
                 {
-                    length = nodeText.Length - start - 1;
+                    length = nodeText.Length - start;
                 }
 
                 string t = nodeText.Substring(start, length);

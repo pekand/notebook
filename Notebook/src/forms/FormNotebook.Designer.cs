@@ -151,6 +151,7 @@ namespace Notebook
             this.treeView.ContextMenuStrip = this.contextMenuStripTree;
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Font = new System.Drawing.Font("Consolas", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.treeView.HideSelection = false;
             this.treeView.ImageIndex = 0;
             this.treeView.ImageList = this.imageListTree;
             this.treeView.Location = new System.Drawing.Point(0, 0);
@@ -290,7 +291,7 @@ namespace Notebook
             this.locateToolStripMenuItem,
             this.closeToolStripMenuItem2});
             this.contextMenuStripTabs.Name = "contextMenuStripTabs";
-            this.contextMenuStripTabs.Size = new System.Drawing.Size(181, 92);
+            this.contextMenuStripTabs.Size = new System.Drawing.Size(118, 70);
             // 
             // renameToolStripMenuItem
             // 
