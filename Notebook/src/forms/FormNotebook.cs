@@ -984,7 +984,17 @@ namespace Notebook
         {
             if (treeView.SelectedNode != null)
             {
-                treeView.SelectedNode.Collapse();
+
+                TreeData treeData = this.getNodeData(treeView.SelectedNode);
+
+                if (treeData.isroot) {
+                    foreach (TreeNode node in treeView.SelectedNode.Nodes) {
+                        node.Collapse();
+                    }
+                }
+                else {
+                    treeView.SelectedNode.Collapse();
+                }
             }
         }
 
