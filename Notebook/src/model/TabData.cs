@@ -13,17 +13,33 @@ namespace Notebook
         public string id = "";
 
         public string nodeid = "";
+
         public string name = "";
-        public string path = "";
         public string text = "";
         public bool selected = false;
         public bool saved = false;
 
+        // shortcuts
         public TreeNode node = null;
+        public TabPage tabPage = null;
+        public ScintillaNET.Scintilla textBox = null;
 
-        public TabPage tabPage = new TabPage();
-        //public TextBox textBox = new TextBox();
+        public TabData Clone()
+        {
+            TabData o = new TabData();
 
-        public ScintillaNET.Scintilla textBox  = new ScintillaNET.Scintilla();
+            o.id = this.id;
+            o.nodeid = this.nodeid;
+            o.name = this.name;
+            o.text = this.text;
+            o.selected = this.selected;
+            o.saved = this.saved;
+
+            o.node = null;
+            o.tabPage = null;
+            o.textBox = null;
+
+            return o;
+        }
     }
 }

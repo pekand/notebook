@@ -64,8 +64,6 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="src\config\Options.cs" />
-    <Compile Include="src\config\OptionsFile.cs" />
     <Compile Include="src\forms\popup\FormPin.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -84,11 +82,14 @@
     <Compile Include="src\forms\popup\FormSearch.Designer.cs">
       <DependentUpon>FormSearch.cs</DependentUpon>
     </Compile>
+    <Compile Include="src\model\NotebookState.cs" />
+    <Compile Include="src\model\NotebookFile.cs" />
     <Compile Include="src\model\SearchResult.cs" />
     <Compile Include="src\model\TabData.cs" />
     <Compile Include="src\model\TreeData.cs" />
     <Compile Include="src\system\Os.cs" />
     <Compile Include="src\time\Time.cs" />
+    <Compile Include="src\tools\Media.cs" />
     <Compile Include="src\tools\Uid.cs" />
     <EmbeddedResource Include="src\forms\FormNotebook.resx">
       <DependentUpon>FormNotebook.cs</DependentUpon>

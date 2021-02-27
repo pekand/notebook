@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using ScintillaNET;
 
@@ -10,12 +9,18 @@ namespace Notebook
 {
     public partial class FormNotebook : Form
     {
+        public String configFileDirectory = "Notebook";
 
-        private bool modified = false;
+#if DEBUG
+        // global configuration file name in debug mode
+        public String defaultFileName = "default.debug.notebook";
+#else
+        public String defaultFileName = "default.notebook";
+#endif
 
-        private Options options = new Options();
+        private NotebookState state = null;
 
-        private int countTabs = 0;
+        //private Options options = new Options();
 
         private bool isDoubleClick = false;
 
@@ -26,57 +31,75 @@ namespace Notebook
             InitializeComponent();
         }
 
+        public string getDefaultFilePath()
+        {
+            // use local config file
+            string localOptionFilePath = Os.Combine(
+                Os.GetCurrentApplicationDirectory(),
+                this.defaultFileName
+            );
+
+            if (Os.FileExists(localOptionFilePath))
+            {
+                return localOptionFilePath;
+            }
+            else
+            {
+
+                string globalConfigDirectory = Os.Combine(
+                    Os.GetApplicationsDirectory(),
+                    this.configFileDirectory
+                );
+
+                // create global config directory if not exist
+                if (!Os.DirectoryExists(globalConfigDirectory))
+                {
+                    Os.CreateDirectory(globalConfigDirectory);
+                }
+
+                return Os.Combine(
+                    globalConfigDirectory,
+                    this.defaultFileName
+                );
+            }
+        }
+
         // FORM
         private void FormNotebook_Load(object sender, EventArgs e)
         {
+
             this.tabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
 
-            List<TabData> tabsData = new List<TabData>();
-            OptionsFile optionsFile = new OptionsFile(this.options, tabsData, this.treeView.Nodes);
-            optionsFile.LoadConfigFile();
-
+            // remove example pages in designer
             tabControl.TabPages.Remove(tabPageSettings);
             tabControl.TabPages.Remove(tabPageEdit);
-            tabControl.SelectedTab = tabPageSettings;
+            tabControl.SelectedTab = null;
 
-            for (int i = 0; i < tabsData.Count; ++i)
+
+            string defaultFilePath = getDefaultFilePath();
+
+            if (Os.FileExists(defaultFilePath))
             {
-                // find node for tab
-                if (tabsData[i].nodeid != "")
+                this.openNotebookFile(defaultFilePath);
+            }
+            else {
+                this.newNotebookFile();
+
+                this.state.path = defaultFilePath;
+
+                if (this.treeView.Nodes.Count == 0)
                 {
-                    tabsData[i].node = this.finNodeById(tabsData[i].nodeid);
-
-                    if (tabsData[i].node == null) {
-                        tabsData[i].nodeid = "";
-                    }
-                }
-
-                // select tab 
-                if (tabsData[i].selected) {
-                    this.selectTab(tabsData[i].tabPage);
+                    TreeNode rootNode = this.state.addRootNode();
+                    this.state.addNewTab(rootNode.Name, rootNode);
                 }
             }
-
-            // add first node if treeview is empty
-            if (this.treeView.Nodes.Count == 0)
-            {
-                this.addRootNode();
-            }
-
-            // add tabs to tabControll
-            for (int i = 0; i < tabsData.Count; i++)
-            {
-                this.addNewTab(tabsData[i].name, tabsData[i].node, tabsData[i]);
-            }
-
-            
 
             this.restoreWindowPosition();
         }
 
         private void restoreWindowPosition() {
 
-            if (this.options.windowsWidth == 0 || this.options.windowsHeight == 0)
+            if (this.state.windowsWidth == 0 || this.state.windowsHeight == 0)
             {
                 this.Left = 100;
                 this.Top = 100;
@@ -85,40 +108,30 @@ namespace Notebook
                 return;
             }
 
-            this.Left = this.options.windowsX;
-            this.Top = this.options.windowsY;
-            this.Width = this.options.windowsWidth;
-            this.Height = this.options.windowsHeight;
+            this.Left = this.state.windowsX;
+            this.Top = this.state.windowsY;
+            this.Width = this.state.windowsWidth;
+            this.Height = this.state.windowsHeight;
 
 
-            if (this.options.windowsState == 1)
+            if (this.state.windowsState == 1)
             {
                 this.WindowState = FormWindowState.Maximized;
             }
 
-            if (this.options.windowsState == 2)
+            if (this.state.windowsState == 2)
             {
                 this.WindowState = FormWindowState.Minimized;
             }
 
-            if (this.options.windowsState == 3)
+            if (this.state.windowsState == 3)
             {
                 this.WindowState = FormWindowState.Normal;
             }
 
-            this.splitContainer.SplitterDistance = this.options.splitDistance;
+            this.splitContainer.SplitterDistance = this.state.splitDistance;
 
             saveWindowPosition = true;
-        }
-
-        public void saveConfig()
-        {
-            List<TabData> tabsData = this.getAllTabsData();
-            OptionsFile optionsFile = new OptionsFile(this.options, tabsData, this.treeView.Nodes);
-            optionsFile.SaveConfigFile();
-
-            this.modified = false;
-            this.SetTitle();
         }
 
         private void FormNotebook_FormClosing(object sender, FormClosingEventArgs e)
@@ -132,23 +145,23 @@ namespace Notebook
                 for (int i = 0; i < tabControl.TabCount; ++i)
                 {
                     TabPage tab = (TabPage)tabControl.GetControl(i);
-                    TabData tabData = this.getTabData(tab);
+                    TabData tabData = this.state.getTabData(tab);
                     if (tabData.node!= null)
                     {
-                        TreeData treeData = this.getNodeData(tabData.node);
+                        TreeData treeData = this.state.getNodeData(tabData.node);
                         treeData.text = ((ScintillaNET.Scintilla)tab.Controls[0]).Text;
                     }
                 }
             }
 
-            this.saveConfig();
+            this.saveNotebook();
         }
 
         private void splitContainer_SplitterMoved(object sender, SplitterEventArgs e)
         {
             if (saveWindowPosition)
             {
-                this.options.splitDistance = this.splitContainer.SplitterDistance;
+                this.state.splitDistance = this.splitContainer.SplitterDistance;
             }
         }
 
@@ -159,32 +172,32 @@ namespace Notebook
 
                 if (this.WindowState == FormWindowState.Maximized)
                 {
-                    this.options.windowsState = 1;
+                    this.state.windowsState = 1;
                     return;
                 }
 
                 if (this.WindowState == FormWindowState.Minimized)
                 {
-                    this.options.windowsState = 2;
+                    this.state.windowsState = 2;
                     return;
                 }
 
                 if (this.WindowState == FormWindowState.Normal)
                 {
-                    this.options.windowsState = 3;
+                    this.state.windowsState = 3;
                 }
 
-                this.options.windowsX = this.Left;
-                this.options.windowsY = this.Top;
-                this.options.windowsWidth = this.Width;
-                this.options.windowsHeight = this.Height;
+                this.state.windowsX = this.Left;
+                this.state.windowsY = this.Top;
+                this.state.windowsWidth = this.Width;
+                this.state.windowsHeight = this.Height;
             }
 
         }
 
         private void SetTitle()
         {
-            this.Text = "Notebook" + (this.modified ? "*" : "");
+            this.Text = "Notebook" + (this.state.isModified() ? "*" : "");
         }
 
 
@@ -196,8 +209,8 @@ namespace Notebook
 
         private void Modified() {
 
-            if (!this.modified) {
-                this.modified = true;
+            if (!this.state.isModified()) {
+                this.state.Modified();
                 this.SetTitle();
                 this.autosaveTimer();
             }
@@ -246,7 +259,12 @@ namespace Notebook
 
 
         private bool CanPin() {
-            return enablePin && !isPinned && (this.formSearch == null || !this.formSearch.Visible);
+            return 
+                enablePin && 
+                !isPinned && 
+                (this.formSearch == null || !this.formSearch.Visible) &&
+                !this.dialogShown
+            ;
         }
         private void ShowPin() {
             if (!CanPin())
@@ -257,12 +275,12 @@ namespace Notebook
             isPinned = true;
 
 
-            if (this.options.pinX == -1 && this.options.pinY == -1) {
+            if (this.state.pinX == -1 && this.state.pinY == -1) {
                 formPopup.Left = this.Left + this.Width - 50;
                 formPopup.Top = this.Top + this.Height - 50;
             } else {
-                formPopup.Left = this.options.pinX;
-                formPopup.Top = this.options.pinY;
+                formPopup.Left = this.state.pinX;
+                formPopup.Top = this.state.pinY;
             }
 
 
@@ -279,6 +297,10 @@ namespace Notebook
         private bool isHidden = false;
         private int positionLeft = 0;
         private int positionTop = 0;
+
+
+        private bool dialogShown = false;
+        private FormSearch formSearch = null;
 
         public void HideForm() {
             if (isHidden)
@@ -305,8 +327,8 @@ namespace Notebook
 
             formPopup.Hide();
 
-            this.options.pinX = formPopup.Left;
-            this.options.pinY = formPopup.Top;
+            this.state.pinX = formPopup.Left;
+            this.state.pinY = formPopup.Top;
 
             isHidden = false;
             isPinned = false;
@@ -355,13 +377,68 @@ namespace Notebook
 
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            TabData tabData = this.addNewTab("New");
-            this.selectTab(tabData.tabPage);
+            TabData tabData = this.state.addNewTab("New");
+            this.state.selectTab(tabData.tabPage);
+        }
+
+        public void newNotebookFile()
+        {
+            NotebookState notebookState = new NotebookState(this.treeView, this.tabControl);
+            NotebookFile notebook = new NotebookFile(notebookState);
+            this.state = notebookState;
+            this.state.setState(notebookState);
+        }
+
+        public void openNotebookFile(string path) {
+            NotebookState notebookState = new NotebookState(this.treeView, this.tabControl);
+            NotebookFile notebook = new NotebookFile(notebookState);
+            notebook.LoadNotebookFile(path);
+            this.state = notebookState;
+            this.state.setState(notebookState);
+        }
+
+        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.dialogShown = true;
+            
+            DialogResult result = this.openFileDialog.ShowDialog();
+
+            if (result == DialogResult.OK) { // check if file exists
+                string path = this.openFileDialog.FileName;
+                this.openNotebookFile(path);
+                
+            }
+
+            this.dialogShown = true;
+        }
+
+        public void saveNotebook()
+        {
+            this.state.copyStateFromControls();
+            NotebookFile notebook = new NotebookFile(this.state);
+            notebook.SaveNotebookFile(this.state.path);
+
+            this.state.unModified();
+            this.SetTitle();
         }
 
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this.saveConfig();
+            this.saveNotebook();
+        }
+
+        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.dialogShown = true;
+
+            DialogResult result = this.saveFileDialog.ShowDialog();
+
+            if (result == DialogResult.OK)
+            {
+
+            }
+
+            this.dialogShown = true;
         }
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -376,13 +453,12 @@ namespace Notebook
         }
 
 
-        private FormSearch formSearch = null;
         private void searchToolStripMenuItem_Click(object sender, EventArgs e)
         {
             string searchFor = "";
 
             if (this.tabControl.SelectedTab != null) {
-                TabData tabData = this.getTabData(this.tabControl.SelectedTab);
+                TabData tabData = this.state.getTabData(this.tabControl.SelectedTab);
                 searchFor = tabData.textBox.SelectedText;
             }
 
@@ -391,6 +467,7 @@ namespace Notebook
             formSearch.Owner = this;
             formSearch.Show();
         }
+
 
         // SHORTCUT
 
@@ -403,7 +480,7 @@ namespace Notebook
 
                 if (tab != null)
                 {
-                    this.closeTab(tab);
+                    this.state.closeTab(tab);
                 }
             }
 
@@ -436,155 +513,6 @@ namespace Notebook
 
         // TREEVIEW
 
-        public List<TreeNode> getAllNodes(TreeNodeCollection collection = null, List<TreeNode> list = null)
-        {
-            if (collection == null)
-            {
-                collection = treeView.Nodes;
-            }
-
-            if (list == null) 
-            {
-                list = new List<TreeNode>();
-            }
-
-            foreach (TreeNode node in collection) {
-                list.Add(node);
-
-                if (node.Nodes.Count > 0) {
-                    this.getAllNodes(node.Nodes, list);
-                }
-            }
-
-            return list;
-        }
-
-        public TreeData getNodeData(TreeNode node) {
-            TreeData treeData = (TreeData)node.Tag;
-
-            return treeData;
-        }
-
-        public TreeNode finNodeById(string id, TreeNodeCollection nodes = null) {
-
-            if (nodes == null) {
-                nodes = treeView.Nodes;
-            }
-
-            TreeData treeData = null;
-            for (int i = 0; i< nodes.Count; i++) {
-                treeData = (TreeData)nodes[i].Tag;
-                if (treeData.id == id) {
-                    return nodes[i];
-                }
-
-                if (nodes[i].Nodes.Count>0) {
-                    TreeNode node = this.finNodeById(id, nodes[i].Nodes);
-
-                    if (node != null) {
-                        return node;
-                    }
-                }
-
-            }
-
-            return null;
-
-        }
-
-        public TreeNode addRootNode()
-        {
-            string name = "Notebook";
-            TreeNode root = this.addNewNode(name);
-            root.ImageIndex = 0;
-            root.SelectedImageIndex = 0;
-            root.ImageKey = "notebook.ico";
-            TreeData treeData = (TreeData)root.Tag;
-            treeData.isroot = true;
-
-
-            treeView.Nodes.Add(root);
-
-            return root;
-        }
-
-        public TreeNode addNewNode(string name, TreeNode parent = null)
-        {
-            TreeNode node = new TreeNode();
-            TreeData treeData = new TreeData();
-            treeData.id = Uid.get();
-            treeData.name = name;
-            node.Tag = treeData;
-            node.Text = name;
-            node.ImageIndex = 1;
-            node.SelectedImageIndex = 1;
-            node.ImageKey = "note.png";
-
-            if (parent != null)
-            {
-                parent.Nodes.Add(node);
-                parent.Expand();
-            }
-
-            return node;
-        }
-
-        public bool canRemoveNode(TreeNode parent)
-        {
-            bool canRemove = true;
-            if (parent.Nodes.Count > 0)
-            {
-                for (int i = 0; i < parent.Nodes.Count; i++)
-                {
-                    if (!canRemoveNode(parent.Nodes[i]))
-                    {
-                        canRemove = false;
-                    }
-                }
-            }
-
-            if (!canRemove)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        public void removeNode(TreeNode node)
-        {
-
-            if (node == null) {
-                return;
-            }
-
-            if (node.Nodes.Count > 0)
-            {
-                for (int i = 0; i < node.Nodes.Count; i++)
-                {
-                    removeNode(node.Nodes[i]);
-                }
-            }
-
-            TreeData treeData = this.getNodeData(node);
-            if (treeData.tabData != null && treeData.tabData.tabPage != null)
-            {
-                this.closeTab(treeData.tabData.tabPage);
-            }
-
-            if (treeData.isroot) {
-                return;
-            }
-
-            this.Modified();
-
-            if (node.Parent != null) {
-                node.Parent.Nodes.Remove(node);
-            } else {
-                treeView.Nodes.Remove(node);
-            }
-        }
-
         private void treeView_MouseDown(object sender, MouseEventArgs e)
         {
             isDoubleClick = e.Clicks > 1;
@@ -599,23 +527,6 @@ namespace Notebook
 
         }
 
-        public bool selectNodeTab(TreeNode node) {
-            TabData tabData = null;
-
-            for (int i = 0; i < tabControl.TabCount; ++i)
-            {
-                TabPage tab = (TabPage)tabControl.GetControl(i);
-                tabData = (TabData)tab.Tag;
-                if (tabData.node == node)
-                {
-                    this.selectTab(tab);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private void treeView_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
             TreeNode selected = treeView.SelectedNode;
@@ -626,20 +537,7 @@ namespace Notebook
                 return;
             }
 
-            this.selectNodeTab(selected);
-        }
-
-        public void opentNodeTab(TreeNode node)
-        {
-            if (this.selectNodeTab(node)) {
-                return;
-            }
-            
-            TreeData treeData = (TreeData)node.Tag;
-            TabData tabData = new TabData();
-            tabData.textBox.Focus();
-            this.addNewTab(treeData.name, node, tabData);
-            this.selectTab(tabData.tabPage);
+            this.state.selectNodeTab(selected);
         }
 
         private void treeView_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
@@ -652,7 +550,7 @@ namespace Notebook
                 return;
             }
 
-            this.opentNodeTab(selected);
+            this.state.opentNodeTab(selected);
         }
         
         private void treeView_BeforeCollapse(object sender, TreeViewCancelEventArgs e)
@@ -667,6 +565,17 @@ namespace Notebook
                 e.Cancel = true;
         }
 
+        private void treeView_AfterCollapse(object sender, TreeViewEventArgs e)
+        {
+            this.state.collapseNode(e.Node);
+
+        }
+
+        private void treeView_AfterExpand(object sender, TreeViewEventArgs e)
+        {
+            this.state.expandNode(e.Node);
+        }
+
         private void treeView_BeforeLabelEdit(object sender, NodeLabelEditEventArgs e)
         {
 
@@ -675,7 +584,7 @@ namespace Notebook
                 return;
             }
 
-            TreeData treeData = this.getNodeData(e.Node);
+            TreeData treeData = this.state.getNodeData(e.Node);
 
             //if (treeData.isroot)
             //  e.CancelEdit = true;
@@ -688,7 +597,7 @@ namespace Notebook
                 return;
             }
 
-            TreeData treeData = this.getNodeData(e.Node);
+            TreeData treeData = this.state.getNodeData(e.Node);
 
             if (treeData.name != e.Label) { 
     
@@ -761,15 +670,6 @@ namespace Notebook
             TextRenderer.DrawText(e.Graphics, e.Node.Text, font, e.Bounds, e.Node.ForeColor, TextFormatFlags.GlyphOverhangPadding);
         }
 
-        private bool ContainsNode(TreeNode node1, TreeNode node2)
-        {
-
-            if (node2.Parent == null) return false;
-            if (node2.Parent.Equals(node1)) return true;
-
-            return ContainsNode(node1, node2.Parent);
-        }
-
         private void treeView_DragDrop(object sender, DragEventArgs e)
         {
             Point targetPoint = treeView.PointToClient(new Point(e.X, e.Y));
@@ -812,7 +712,7 @@ namespace Notebook
 
             TreeData draggedNodeData = (TreeData)draggedNode.Tag;
 
-            if (ContainsNode(draggedNode, targetNode))
+            if (this.state.ContainsNode(draggedNode, targetNode))
             {
                 treeView.Invalidate();
                 return;
@@ -926,7 +826,7 @@ namespace Notebook
 
             this.Modified();
 
-            this.addNewNode("Note", selected);
+            this.state.addNewNode("Note", selected);
         }
 
         private void removeToolStripMenuItem_Click(object sender, EventArgs e)
@@ -945,9 +845,9 @@ namespace Notebook
                 return;
             }
 
-            if (this.canRemoveNode(selected))
+            if (this.state.canRemoveNode(selected))
             {
-                this.removeNode(selected);
+                this.state.removeNode(selected);
 
                 if (selected.Parent != null)
                 {
@@ -961,7 +861,6 @@ namespace Notebook
             }
 
         }
-
 
         private void renameToolStripMenuItem1_Click(object sender, EventArgs e)
         {
@@ -985,7 +884,7 @@ namespace Notebook
             if (treeView.SelectedNode != null)
             {
 
-                TreeData treeData = this.getNodeData(treeView.SelectedNode);
+                TreeData treeData = this.state.getNodeData(treeView.SelectedNode);
 
                 if (treeData.isroot) {
                     foreach (TreeNode node in treeView.SelectedNode.Nodes) {
@@ -1002,7 +901,7 @@ namespace Notebook
         {
             if (treeView.SelectedNode != null)
             {
-                TreeData treeData = this.getNodeData(treeView.SelectedNode);
+                TreeData treeData = this.state.getNodeData(treeView.SelectedNode);
 
                 if (!treeData.isroot && !treeData.folder) {
                     treeData.folder = true;
@@ -1023,7 +922,7 @@ namespace Notebook
         {
             if (treeView.SelectedNode != null)
             {
-                TreeData treeData = this.getNodeData(treeView.SelectedNode);
+                TreeData treeData = this.state.getNodeData(treeView.SelectedNode);
 
                 if (!treeData.isroot && !treeData.note)
                 {
@@ -1042,192 +941,6 @@ namespace Notebook
 
         // TABS
 
-        public List<TabData> getAllTabsData()
-        {
-            List<TabData> tabsData = new List<TabData>();
-
-            for (int i = 0; i < tabControl.TabCount; ++i)
-            {
-                TabPage tabpage = (TabPage)tabControl.GetControl(i);
-                TabData tabData = (TabData)tabpage.Tag;
-                tabsData.Add(tabData);
-            }
-
-            return tabsData;
-        }
-
-        public TabData getTabData(TabPage tab)
-        {
-            TabData treeData = (TabData)tab.Tag;
-
-            return treeData;
-        }
-
-        private const int EM_SETTABSTOPS = 0x00CB;
-
-        [DllImport("User32.dll", CharSet = CharSet.Auto)]
-        public static extern IntPtr SendMessage(IntPtr h, int msg, int wParam, int[] lParam);
-
-        public static Color IntToColor(int rgb)
-        {
-            return Color.FromArgb(255, (byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
-        }
-
-        private TabData addNewTab(string name = "New", TreeNode node = null, TabData tabData = null)
-        {
-            ++countTabs;
-
-            if (tabData == null) {
-                tabData = new TabData();
-            }
-
-            tabData.id = Uid.get();
-            tabData.name = name;
-            tabData.node = node;
-
-            if (node != null)
-            {
-                TreeData treeData = (TreeData)node.Tag;
-                tabData.nodeid = treeData.id;
-                tabData.textBox.Text = treeData.text;
-                treeData.tabData = tabData;
-
-
-            }
-            else {
-                tabData.textBox.Text = tabData.text;
-            }
-
-            tabData.tabPage.Text = tabData.name;
-            tabData.textBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            tabData.textBox.Font = new System.Drawing.Font("Consolas", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            tabData.textBox.Location = new System.Drawing.Point(3, 3);
-            tabData.textBox.Name = "textBox" + (countTabs);
-            tabData.textBox.Size = new System.Drawing.Size(546, 296);
-            tabData.textBox.TabIndex = 0;
-            tabData.textBox.Tag = tabData;
-            tabData.textBox.TextChanged += new System.EventHandler(this.textBox_TextChanged);
-            tabData.textBox.IndentationGuides = IndentView.LookBoth;
-            tabData.textBox.WrapMode = ScintillaNET.WrapMode.Word;
-            tabData.textBox.StyleResetDefault();
-            tabData.textBox.Styles[Style.Default].Font = "Consolas";
-            tabData.textBox.Styles[Style.Default].Size = 16;
-            //tabData.textBox.Styles[Style.Default].BackColor = IntToColor(0x212121);
-            //tabData.textBox.Styles[Style.Default].ForeColor = IntToColor(0xFFFFFF);
-            tabData.textBox.AssignCmdKey(Keys.Control | Keys.W, Command.Null);
-
-
-            tabData.textBox.EmptyUndoBuffer();
-            tabData.textBox.StyleClearAll();
-
-            SendMessage(tabData.textBox.Handle, EM_SETTABSTOPS, 1,
-            new int[] { 4 * 4 });
-
-            tabData.tabPage.Controls.Add(tabData.textBox);
-            tabControl.TabPages.Add(tabData.tabPage);
-            tabControl.SelectedTab = tabData.tabPage;
-            tabData.tabPage.Tag = tabData;
-
-            return tabData;
-        }
-
-        public void selectTab(TabPage tab)
-        {
-
-            for (int i = 0; i < tabControl.TabCount; ++i)
-            {
-                TabData tabData = (TabData)((TabPage)tabControl.GetControl(i)).Tag;
-                if (tabControl.GetControl(i) == tab)
-                {
-                    tabData.selected = true;
-                }
-                else {
-                    tabData.selected = false;
-                }
-            }
-
-            tabControl.SelectedTab = tab;
-        }
-
-        public void closeTab(TabPage tab)
-        {
-            int i = 0;
-            for (i=0; i < tabControl.TabCount; ++i)
-            {
-                if (tabControl.GetControl(i) == tab) {
-                    break;
-                }
-            }
-
-            TabData tabData = (TabData)tab.Tag;
-
-            if (tabData.node != null) {
-                TreeData nodeData = (TreeData)tabData.node.Tag;
-                nodeData.text = ((ScintillaNET.Scintilla)tab.Controls[0]).Text;
-
-                nodeData.tabData = null;
-            }
-
-            tabControl.TabPages.Remove(tab);
-
-            if (tabControl.TabCount > 0)
-            {
-                if (i < tabControl.TabCount)
-                {
-                    this.selectTab((TabPage)tabControl.GetControl(i));
-                }
-                else
-                {
-                    this.selectTab((TabPage)tabControl.GetControl(tabControl.TabCount-1));
-                }
-            }
-        }
-
-        public void renameTab(string name, TabPage tab)
-        {
-            if (tab == null)
-            {
-                return;
-            }
-
-           
-
-            TabData tadData = (TabData)tab.Tag;
-
-            if (tadData.name != name) {
-                this.Modified();
-            }
-
-            tadData.name = name;
-            tadData.tabPage.Text = name;
-
-            if (tadData.node != null) {
-                tadData.node.Text = name;
-                TreeData treeData = (TreeData)tadData.node.Tag;
-                treeData.name = name;
-            }
-        }
-
-        private int getHoverTabIndex(TabControl tc)
-        {
-            for (int i = 0; i < tc.TabPages.Count; i++)
-            {
-                if (tc.GetTabRect(i).Contains(tc.PointToClient(Cursor.Position)))
-                    return i;
-            }
-
-            return -1;
-        }
-
-        private void swapTabPages(TabControl tc, TabPage src, TabPage dst)
-        {
-            int index_src = tc.TabPages.IndexOf(src);
-            int index_dst = tc.TabPages.IndexOf(dst);
-            tc.TabPages[index_dst] = src;
-            tc.TabPages[index_src] = dst;
-            tc.Refresh();
-        }
-
         private void tabControl_MouseDown(object sender, MouseEventArgs e)
         {
 
@@ -1238,14 +951,14 @@ namespace Notebook
                 if (closeButton.Contains(e.Location))
                 {
                     TabPage tabPage = this.tabControl.TabPages[i];
-                    this.closeTab(tabPage);
+                    this.state.closeTab(tabPage);
                     return;
                 }
             }
 
             // store clicked tab
             TabControl tc = (TabControl)sender;
-            int hover_index = this.getHoverTabIndex(tc);
+            int hover_index = this.state.getHoverTabIndex();
             if (hover_index >= 0) { tc.Tag = tc.TabPages[hover_index]; }
         }
 
@@ -1278,7 +991,7 @@ namespace Notebook
             int dragTab_index = tc.TabPages.IndexOf(dragTab);
 
             // hover over a tab?
-            int hoverTab_index = this.getHoverTabIndex(tc);
+            int hoverTab_index = this.state.getHoverTabIndex();
             if (hoverTab_index < 0) { e.Effect = DragDropEffects.None; return; }
             TabPage hoverTab = tc.TabPages[hoverTab_index];
             e.Effect = DragDropEffects.Move;
@@ -1297,15 +1010,15 @@ namespace Notebook
                 if (dragTab_index < hoverTab_index)
                 {
                     if ((e.X - tcLocation.X) > ((hoverTabRect.X + hoverTabRect.Width) - dragTabRect.Width))
-                        this.swapTabPages(tc, dragTab, hoverTab);
+                        this.state.swapTabPages(dragTab, hoverTab);
                 }
                 else if (dragTab_index > hoverTab_index)
                 {
                     if ((e.X - tcLocation.X) < (hoverTabRect.X + dragTabRect.Width))
-                        this.swapTabPages(tc, dragTab, hoverTab);
+                        this.state.swapTabPages(dragTab, hoverTab);
                 }
             }
-            else this.swapTabPages(tc, dragTab, hoverTab);
+            else this.state.swapTabPages(dragTab, hoverTab);
 
             // select new pos of dragTab
             tc.SelectedIndex = tc.TabPages.IndexOf(dragTab);
@@ -1370,7 +1083,7 @@ namespace Notebook
 
             if (formRename.saved)
             {
-                this.renameTab(formRename.text, selected);
+                this.state.renameTab(formRename.text, selected);
             }
 
             this.enablePin = true;
@@ -1385,41 +1098,22 @@ namespace Notebook
                 return;
             }
 
-            this.closeTab(selected);
+            this.state.closeTab(selected);
         }
 
-
-        // TEXTBOX
-        private void textBox_TextChanged(object sender, EventArgs e)
-        {
-            ScintillaNET.Scintilla textBox = (ScintillaNET.Scintilla)sender;
-            TabData tabData = (TabData)textBox.Tag;
-
-            if (textBox.Text != tabData.text) {
-                tabData.text = textBox.Text;
-
-                if (tabData.node != null) {
-                    TreeData treeData = (TreeData)tabData.node.Tag;
-                    treeData.text = textBox.Text;
-                }
-
-                this.Modified();
-            }
-        }
 
         // TIMER
 
         private void timer_Tick(object sender, EventArgs e)
         {
-            if (this.modified) {
-                this.saveConfig();
+            if (this.state.isModified()) {
+                this.saveNotebook();
             }
 
             timer.Enabled = false;
         }
 
         // SEARCH
-
 
         public List<int> searchInString(string searchFor, string searchIn) {
             List<int> results = new List<int>();
@@ -1443,13 +1137,13 @@ namespace Notebook
         public List<SearchResult> searchFor(string searchFor = "") {
             List<SearchResult> results = new List<SearchResult>();
 
-            List<TreeNode> treeNodes = this.getAllNodes();
+            List<TreeNode> treeNodes = this.state.getAllNodes();
 
             foreach (TreeNode node in treeNodes) {
                 bool foundInTitle = false;
                 bool foundInContent = false;
 
-                TreeData treeData = this.getNodeData(node);
+                TreeData treeData = this.state.getNodeData(node);
                 TabData tabData = null;
 
 
@@ -1458,7 +1152,7 @@ namespace Notebook
 
                 if (treeData.tabData != null && treeData.tabData.textBox != null)
                 {
-                    tabData = this.getTabData(treeData.tabData.tabPage);
+                    tabData = this.state.getTabData(treeData.tabData.tabPage);
                     text = tabData.textBox.Text;
 
                 }
@@ -1509,7 +1203,7 @@ namespace Notebook
                 return;
             }
 
-            TreeData treeData = this.getNodeData(node);
+            TreeData treeData = this.state.getNodeData(node);
 
             if (treeData == null)
             {
@@ -1532,7 +1226,7 @@ namespace Notebook
                 this.treeView.SelectedNode = result.node;
                 result.node.EnsureVisible();
                 this.Focus();
-                this.opentNodeTab(result.node);
+                this.state.opentNodeTab(result.node);
                 this.GoToPositionInTab(result.position, result.node);
             }
         }
