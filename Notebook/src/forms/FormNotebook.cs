@@ -15,6 +15,8 @@ namespace Notebook
 
         private NotebookState state = null;
 
+        private GlobalOptions options = new GlobalOptions();
+
         //private Options options = new Options();
 
         private bool isDoubleClick = false;
@@ -29,6 +31,9 @@ namespace Notebook
         // FORM
         private void FormNotebook_Load(object sender, EventArgs e)
         {
+            this.options.LoadConfigFile();
+
+            this.TopMost = this.options.mostTop;
 
             this.tabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
 
@@ -111,6 +116,7 @@ namespace Notebook
             }
 
             this.saveNotebook();
+            this.options.SaveConfigFile();
         }
 
         private void splitContainer_SplitterMoved(object sender, SplitterEventArgs e)
@@ -221,7 +227,8 @@ namespace Notebook
 
 
         private bool CanPin() {
-            return 
+            return
+                this.options.enablePin &&
                 enablePin && 
                 !isPinned && 
                 (this.formSearch == null || !this.formSearch.Visible) &&
@@ -229,6 +236,7 @@ namespace Notebook
             ;
         }
         private void ShowPin() {
+
             if (!CanPin())
             {
                 return;
@@ -454,6 +462,24 @@ namespace Notebook
             formSearch.Show();
         }
 
+        private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            pinWindowToolStripMenuItem.Checked = this.options.enablePin;
+            mostTopToolStripMenuItem.Checked = this.options.mostTop;
+        }
+
+        private void mostTopToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.options.mostTop = !this.options.mostTop;
+            this.TopMost = this.options.mostTop;
+            mostTopToolStripMenuItem.Checked = this.options.mostTop;
+        }
+
+        private void pinWindowToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.options.enablePin = !this.options.enablePin;
+            pinWindowToolStripMenuItem.Checked = this.options.enablePin;
+        }
 
         // SHORTCUT
 
@@ -1356,8 +1382,6 @@ namespace Notebook
             TabData tabData = this.state.getTabData(tabControl.SelectedTab);
             tabData.textBox.ReplaceSelection(" " + DateTime.Now.ToString("s") + " ");
         }
-
-
 
         // TIMER
 

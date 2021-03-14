@@ -61,6 +61,7 @@
     <Compile Include="src\forms\FormConsole.Designer.cs">
       <DependentUpon>FormConsole.cs</DependentUpon>
     </Compile>
+    <Compile Include="src\model\GlobalOptions.cs" />
     <Compile Include="src\tools\Convert.cs" />
     <Compile Include="src\forms\FormNotebook.cs">
       <SubType>Form</SubType>
