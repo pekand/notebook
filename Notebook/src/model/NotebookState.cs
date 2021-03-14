@@ -42,6 +42,9 @@ namespace Notebook
             this.tabControl = tabControl;
         }
 
+
+        // CLONE
+
         public NotebookState Clone()
         {
             NotebookState o = new NotebookState();
@@ -168,6 +171,20 @@ namespace Notebook
                     node.ImageKey = "folder.png";
                 }
 
+                if (treeData.isLink)
+                {
+                    node.ImageIndex = 3;
+                    node.SelectedImageIndex = 3;
+                    node.ImageKey = "link.png";
+                }
+
+                if (treeData.isUrl)
+                {
+                    node.ImageIndex = 4;
+                    node.SelectedImageIndex = 4;
+                    node.ImageKey = "url.png";
+                }
+
                 nodes.Add(node);
 
                 if (treeData.childs.Count > 0)
@@ -253,8 +270,6 @@ namespace Notebook
 
         public void setState(NotebookState notebookState)
         {
-            this.unloadCurentState();
-
             notebookState.treeView = treeView;
             notebookState.tabControl = tabControl;
 
@@ -265,6 +280,23 @@ namespace Notebook
 
         public void unloadCurentState()
         {
+
+            this.path = "";
+            this.modified = false;
+
+            this.windowsX = 0;
+            this.windowsY = 0;
+            this.windowsWidth = 0;
+            this.windowsHeight = 0;
+            this.windowsState = 0;
+
+            this.pinX = -1;
+            this.pinY = -1;
+
+            this.lastSave = 0;
+
+            this.splitDistance = 200;
+
             if (this.treeView != null)
             {
                 List<TreeNode> treeNodes = this.getAllNodes(this.treeView.Nodes);
@@ -402,7 +434,7 @@ namespace Notebook
         public TreeNode addRootNode()
         {
             string name = "Notebook";
-            TreeNode root = this.addNewNode(name);
+            TreeNode root = this.addNewNode(name, null, "root");
             root.ImageIndex = 0;
             root.SelectedImageIndex = 0;
             root.ImageKey = "notebook.ico";
@@ -414,19 +446,18 @@ namespace Notebook
             return root;
         }
 
-        public TreeNode addNewNode(string name, TreeNode parent = null)
+        public TreeNode addNewNode(string name, TreeNode parent = null, string nodeType = "note")
         {
             TreeNode node = new TreeNode();
             TreeData treeData = new TreeData();
             treeData.id = Uid.get();
             treeData.name = name;
             treeData.node = node;
-            treeData.note = true;
+            
             node.Tag = treeData;
             node.Text = name;
-            node.ImageIndex = 1;
-            node.SelectedImageIndex = 1;
-            node.ImageKey = "note.png";
+
+            this.setType(node, nodeType);
 
             if (parent != null)
             {
@@ -436,6 +467,56 @@ namespace Notebook
 
             return node;
         }
+
+        public void setType(TreeNode node, string nodeType = "note")
+        {
+            TreeData treeData = this.getNodeData(node);
+
+            if (treeData.isroot) {
+                return;
+            }
+
+            treeData.isroot = false;
+            treeData.folder = false;
+            treeData.isLink = false;
+            treeData.isUrl = false;
+
+            treeData.note = true;
+            node.ImageIndex = 1;
+            node.SelectedImageIndex = 1;
+            node.ImageKey = "note.png";
+
+            if (nodeType == "root") 
+            {
+                treeData.isroot = true;
+                node.ImageIndex = 0;
+                node.SelectedImageIndex = 0;
+                node.ImageKey = "notebook.ico";
+
+            } else if (nodeType == "folder") 
+            {
+                treeData.folder = true;
+                node.ImageIndex = 2;
+                node.SelectedImageIndex = 2;
+                node.ImageKey = "folder.png";
+            }
+            else if (nodeType == "link")
+            {
+                treeData.isLink = true;
+                node.ImageIndex = 3;
+                node.SelectedImageIndex = 3;
+                node.ImageKey = "link.png";
+            }
+            else if (nodeType == "url")
+            {
+                treeData.isUrl = true;
+                node.ImageIndex = 4;
+                node.SelectedImageIndex = 4;
+                node.ImageKey = "url.png";
+            }
+            
+        }
+
         public void removeNode(TreeNode node)
         {
 
@@ -609,7 +690,7 @@ namespace Notebook
             //tabData.textBox.Styles[Style.Default].BackColor = IntToColor(0x212121);
             //tabData.textBox.Styles[Style.Default].ForeColor = IntToColor(0xFFFFFF);
             tabData.textBox.AssignCmdKey(Keys.Control | Keys.W, Command.Null);
-
+            tabData.textBox.AssignCmdKey(Keys.Control | Keys.T, Command.Null);
 
             tabData.textBox.EmptyUndoBuffer();
             tabData.textBox.StyleClearAll();
@@ -624,7 +705,6 @@ namespace Notebook
 
             return tabData;
         }
-
 
         public void selectTab(TabPage tab)
         {

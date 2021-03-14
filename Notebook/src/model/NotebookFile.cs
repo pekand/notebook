@@ -11,21 +11,74 @@ namespace Notebook
 
     public class NotebookFile
     {
+        public static String configFileDirectory = "Notebook";
 
-        
-        public NotebookState notebook = null;
+#if DEBUG
+        // global configuration file name in debug mode
+        public static String defaultFileName = "default.debug.notebook";
+#else
+        public static String defaultFileName = "default.notebook";
+#endif
+
+        public NotebookState state = null;
 
 
-        public NotebookFile(NotebookState notebook)
+        public NotebookFile(NotebookState state)
         {
-            this.notebook = notebook;
+            this.state = state;
         }
 
-        public void LoadNotebookFile(string path)
+        public static string getDefaultFilePath()
         {
-            if (Os.FileExists(path))
+            // use local config file
+            string localOptionFilePath = Os.Combine(
+                Os.GetCurrentApplicationDirectory(),
+                NotebookFile.defaultFileName
+            );
+
+            if (Os.FileExists(localOptionFilePath))
             {
-                this.notebook.path = path;
+                return localOptionFilePath;
+            }
+            else
+            {
+
+                string globalConfigDirectory = Os.Combine(
+                    Os.GetApplicationsDirectory(),
+                    NotebookFile.configFileDirectory
+                );
+
+                // create global config directory if not exist
+                if (!Os.DirectoryExists(globalConfigDirectory))
+                {
+                    Os.CreateDirectory(globalConfigDirectory);
+                }
+
+                return Os.Combine(
+                    globalConfigDirectory,
+                    NotebookFile.defaultFileName
+                );
+            }
+        }
+
+
+        public static bool defaultNotebookFileExists() {
+
+            string defaultFilePath = NotebookFile.getDefaultFilePath();
+
+            if (Os.FileExists(defaultFilePath))
+            {
+                
+                return true;
+            }
+
+            return false;
+        }
+
+        public void LoadNotebookFile()
+        {
+            if (Os.FileExists(this.state.path))
+            {
                 this.LoadXmlNotebookFile();
             }
         }
@@ -34,10 +87,10 @@ namespace Notebook
         {
             try
             {
-                if (Os.FileExists(this.notebook.path))
+                if (Os.FileExists(this.state.path))
                 {
 
-                    string xml = Os.GetFileContent(this.notebook.path);
+                    string xml = Os.GetFileContent(this.state.path);
 
                     XmlReaderSettings xws = new XmlReaderSettings
                     {
@@ -69,53 +122,53 @@ namespace Notebook
             {
                 if (option.Name.ToString() == "lastSave")
                 {
-                    this.notebook.lastSave = Convert.StringToLong(option.Value);
+                    this.state.lastSave = Convert.StringToLong(option.Value);
                 }
 
 
                 if (option.Name.ToString() == "splitDistance")
                 {
-                    this.notebook.splitDistance = Convert.StringToInt(option.Value, 200);
+                    this.state.splitDistance = Convert.StringToInt(option.Value, 200);
                 }
 
                 if (option.Name.ToString() == "windowsX")
                 {
-                    this.notebook.windowsX = Convert.StringToInt(option.Value, 200);
+                    this.state.windowsX = Convert.StringToInt(option.Value, 200);
                 }
 
                 if (option.Name.ToString() == "windowsY")
                 {
-                    this.notebook.windowsY = Convert.StringToInt(option.Value, 200);
+                    this.state.windowsY = Convert.StringToInt(option.Value, 200);
                 }
 
                 if (option.Name.ToString() == "windowsWidth")
                 {
-                    this.notebook.windowsWidth = Convert.StringToInt(option.Value, 200);
+                    this.state.windowsWidth = Convert.StringToInt(option.Value, 200);
                 }
 
                 if (option.Name.ToString() == "windowsHeight")
                 {
-                    this.notebook.windowsHeight = Convert.StringToInt(option.Value, 200);
+                    this.state.windowsHeight = Convert.StringToInt(option.Value, 200);
                 }
 
                 if (option.Name.ToString() == "windowsState")
                 {
-                    this.notebook.windowsState = Convert.StringToInt(option.Value, 200);
+                    this.state.windowsState = Convert.StringToInt(option.Value, 200);
                 }
 
                 if (option.Name.ToString() == "pinX")
                 {
-                    this.notebook.pinX = Convert.StringToInt(option.Value, 200);
+                    this.state.pinX = Convert.StringToInt(option.Value, 200);
                 }
 
                 if (option.Name.ToString() == "pinY")
                 {
-                    this.notebook.pinY = Convert.StringToInt(option.Value, 200);
+                    this.state.pinY = Convert.StringToInt(option.Value, 200);
                 }
 
                 if (option.Name.ToString() == "nodes" && option.HasElements)
                 {
-                    this.loadNodes(option, this.notebook.nodesData);
+                    this.loadNodes(option, this.state.nodesData);
                 }
 
                 if (option.Name.ToString() == "tabs" && option.HasElements)
@@ -164,7 +217,7 @@ namespace Notebook
                                 }
                             }
 
-                            this.notebook.tabsData.Add(tabData);
+                            this.state.tabsData.Add(tabData);
                         }
                     }
                 }
@@ -221,6 +274,17 @@ namespace Notebook
                             treeData.note = nodeElement.Value == "1";
                         }
 
+                        if (nodeElement.Name.ToString() == "url")
+                        {
+                            treeData.isUrl = nodeElement.Value == "1";
+                        }
+
+                        if (nodeElement.Name.ToString() == "link")
+                        {
+                            treeData.isLink = nodeElement.Value == "1";
+                        }
+
+
                         if (nodeElement.Name.ToString() == "childs" && nodeElement.HasElements)
                         {
                             this.loadNodes(nodeElement, treeData.childs);
@@ -233,9 +297,9 @@ namespace Notebook
             }
         }
 
-        public void SaveNotebookFile(string path)
+        public void SaveNotebookFile()
         {
-            if (path == "") {
+            if (this.state.path == "") {
                 return;
             }
 
@@ -243,7 +307,7 @@ namespace Notebook
             {
                 XElement root = this.SaveParams();
 
-                System.IO.StreamWriter file = new System.IO.StreamWriter(path);
+                System.IO.StreamWriter file = new System.IO.StreamWriter(this.state.path);
 
                 string xml = "";
 
@@ -276,28 +340,28 @@ namespace Notebook
             XElement root = new XElement("notebook");
 
             root.Add(new XElement("lastSave", Time.getUnixTime()));
-            root.Add(new XElement("splitDistance", this.notebook.splitDistance.ToString()));
+            root.Add(new XElement("splitDistance", this.state.splitDistance.ToString()));
 
-            root.Add(new XElement("windowsX", this.notebook.windowsX.ToString()));
-            root.Add(new XElement("windowsY", this.notebook.windowsY.ToString()));
-            root.Add(new XElement("windowsWidth", this.notebook.windowsWidth.ToString()));
-            root.Add(new XElement("windowsHeight", this.notebook.windowsHeight.ToString()));
-            root.Add(new XElement("windowsState", this.notebook.windowsState.ToString()));
-            root.Add(new XElement("pinX", this.notebook.pinX.ToString()));
-            root.Add(new XElement("pinY", this.notebook.pinY.ToString()));
+            root.Add(new XElement("windowsX", this.state.windowsX.ToString()));
+            root.Add(new XElement("windowsY", this.state.windowsY.ToString()));
+            root.Add(new XElement("windowsWidth", this.state.windowsWidth.ToString()));
+            root.Add(new XElement("windowsHeight", this.state.windowsHeight.ToString()));
+            root.Add(new XElement("windowsState", this.state.windowsState.ToString()));
+            root.Add(new XElement("pinX", this.state.pinX.ToString()));
+            root.Add(new XElement("pinY", this.state.pinY.ToString()));
 
             XElement nodesNode = new XElement("nodes");
 
             //////////////
             
-            this.saveNodes(nodesNode, this.notebook.nodesData);
+            this.saveNodes(nodesNode, this.state.nodesData);
             root.Add(nodesNode);
 
             //////////////
 
             XElement tabsNode = new XElement("tabs");
 
-            foreach (TabData data in this.notebook.tabsData)
+            foreach (TabData data in this.state.tabsData)
             {
                 XElement tabNode = new XElement("tab");
 
@@ -334,6 +398,8 @@ namespace Notebook
                 nodeNode.Add(new XElement("isroot", treeData.isroot ? "1" : "0"));
                 nodeNode.Add(new XElement("folder", treeData.folder ? "1" : "0"));
                 nodeNode.Add(new XElement("note", treeData.note ? "1" : "0"));
+                nodeNode.Add(new XElement("url", treeData.isUrl ? "1" : "0"));
+                nodeNode.Add(new XElement("link", treeData.isLink ? "1" : "0"));
 
                 if (treeData.childs.Count > 0)
                 {

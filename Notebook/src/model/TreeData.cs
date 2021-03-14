@@ -19,6 +19,8 @@ namespace Notebook
         public bool isroot = false;
         public bool note = false;
         public bool folder = false;
+        public bool isUrl = false;
+        public bool isLink = false;
 
         public List<TreeData> childs = new List<TreeData>();
 
@@ -37,6 +39,8 @@ namespace Notebook
             o.isroot = this.isroot;
             o.note = this.note;
             o.folder = this.folder;
+            o.isUrl = this.isUrl;
+            o.isLink = this.isLink;
 
             if (childs.Count > 0) {
                 foreach (TreeData child in childs) {

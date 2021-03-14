@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
+using System.Text;
 using System.Windows.Forms;
 using ScintillaNET;
 
@@ -9,14 +12,6 @@ namespace Notebook
 {
     public partial class FormNotebook : Form
     {
-        public String configFileDirectory = "Notebook";
-
-#if DEBUG
-        // global configuration file name in debug mode
-        public String defaultFileName = "default.debug.notebook";
-#else
-        public String defaultFileName = "default.notebook";
-#endif
 
         private NotebookState state = null;
 
@@ -31,39 +26,6 @@ namespace Notebook
             InitializeComponent();
         }
 
-        public string getDefaultFilePath()
-        {
-            // use local config file
-            string localOptionFilePath = Os.Combine(
-                Os.GetCurrentApplicationDirectory(),
-                this.defaultFileName
-            );
-
-            if (Os.FileExists(localOptionFilePath))
-            {
-                return localOptionFilePath;
-            }
-            else
-            {
-
-                string globalConfigDirectory = Os.Combine(
-                    Os.GetApplicationsDirectory(),
-                    this.configFileDirectory
-                );
-
-                // create global config directory if not exist
-                if (!Os.DirectoryExists(globalConfigDirectory))
-                {
-                    Os.CreateDirectory(globalConfigDirectory);
-                }
-
-                return Os.Combine(
-                    globalConfigDirectory,
-                    this.defaultFileName
-                );
-            }
-        }
-
         // FORM
         private void FormNotebook_Load(object sender, EventArgs e)
         {
@@ -76,25 +38,19 @@ namespace Notebook
             tabControl.SelectedTab = null;
 
 
-            string defaultFilePath = getDefaultFilePath();
-
-            if (Os.FileExists(defaultFilePath))
+            if (NotebookFile.defaultNotebookFileExists())
             {
-                this.openNotebookFile(defaultFilePath);
+
+                this.openNotebookFile(NotebookFile.getDefaultFilePath());
             }
             else {
                 this.newNotebookFile();
 
-                this.state.path = defaultFilePath;
-
-                if (this.treeView.Nodes.Count == 0)
-                {
-                    TreeNode rootNode = this.state.addRootNode();
-                    this.state.addNewTab(rootNode.Name, rootNode);
-                }
+                this.state.path = NotebookFile.getDefaultFilePath();
             }
 
             this.restoreWindowPosition();
+            this.SetTitle();
         }
 
         private void restoreWindowPosition() {
@@ -197,7 +153,13 @@ namespace Notebook
 
         private void SetTitle()
         {
-            this.Text = "Notebook" + (this.state.isModified() ? "*" : "");
+            string path = "";
+
+            if (this.state.path != "") {
+                path = " - " + this.state.path;
+            }
+
+            this.Text = "Notebook" + (this.state.isModified() ? "*" : "") + path;
         }
 
 
@@ -377,24 +339,47 @@ namespace Notebook
 
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            TabData tabData = this.state.addNewTab("New");
-            this.state.selectTab(tabData.tabPage);
+            this.newNotebookFile();
         }
 
         public void newNotebookFile()
         {
+            if (this.state != null) {
+                this.state.unloadCurentState();
+                this.state = null;
+            }
+
             NotebookState notebookState = new NotebookState(this.treeView, this.tabControl);
             NotebookFile notebook = new NotebookFile(notebookState);
             this.state = notebookState;
             this.state.setState(notebookState);
+
+            if (this.state.treeView.Nodes.Count == 0)
+            {
+                TreeNode rootNode = this.state.addRootNode();
+                this.state.addNewTab(rootNode.Name, rootNode);
+            }
+
+            this.SetTitle();
         }
 
         public void openNotebookFile(string path) {
+
+            if (this.state != null)
+            {
+                this.state.unloadCurentState();
+                this.state = null;
+            }
+
             NotebookState notebookState = new NotebookState(this.treeView, this.tabControl);
+            notebookState.path = path;
+
             NotebookFile notebook = new NotebookFile(notebookState);
-            notebook.LoadNotebookFile(path);
+            notebook.LoadNotebookFile();
+
             this.state = notebookState;
             this.state.setState(notebookState);
+            this.SetTitle();
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -416,7 +401,7 @@ namespace Notebook
         {
             this.state.copyStateFromControls();
             NotebookFile notebook = new NotebookFile(this.state);
-            notebook.SaveNotebookFile(this.state.path);
+            notebook.SaveNotebookFile();
 
             this.state.unModified();
             this.SetTitle();
@@ -435,7 +420,8 @@ namespace Notebook
 
             if (result == DialogResult.OK)
             {
-
+                this.state.path = this.saveFileDialog.FileName;
+                this.saveNotebook();
             }
 
             this.dialogShown = true;
@@ -501,6 +487,13 @@ namespace Notebook
                 }
             }
 
+            if (keyData == (Keys.F12))
+            {
+                Program.console.Show();
+            }
+
+            
+
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
@@ -544,13 +537,27 @@ namespace Notebook
         {
             TreeNode selected = treeView.SelectedNode;
             
-
+            
             if (selected == null)
             {
                 return;
             }
 
-            this.state.opentNodeTab(selected);
+
+            TreeData treeData = this.state.getNodeData(selected);
+
+            if (treeData.isUrl)
+            {
+                Network.OpenUrl(treeData.text);
+            } 
+            else if (treeData.isLink) 
+            {
+                Os.OpenDirectory(treeData.text);
+            } 
+            else if (treeData.isroot || treeData.note || treeData.folder)
+            {
+                this.state.opentNodeTab(selected);
+            }
         }
         
         private void treeView_BeforeCollapse(object sender, TreeViewCancelEventArgs e)
@@ -683,6 +690,51 @@ namespace Notebook
 
             TreeData targetNodeData = (TreeData)targetNode.Tag;
 
+            string action = "";
+            string text = "";
+
+
+            if (e.Data.GetDataPresent("UniformResourceLocator", false)) {
+                object data = e.Data.GetData("UniformResourceLocator");
+                MemoryStream ms = data as MemoryStream;
+                byte[] bytes = ms.ToArray();
+                Encoding encod = Encoding.ASCII;
+                String url = encod.GetString(bytes);
+                text = url.Substring(0, url.IndexOf('\0'));
+
+                TreeNode newNode = this.state.addNewNode("Note", targetNode, "url");
+                TreeData newNodeData = this.state.getNodeData(newNode);
+                newNodeData.text = text;
+            } else if (e.Data.GetDataPresent(DataFormats.Html, false))
+            {
+                text = (string)e.Data.GetData(DataFormats.Text);
+                TreeNode newNode = this.state.addNewNode("Note", targetNode, "note");
+                TreeData newNodeData = this.state.getNodeData(newNode);
+                newNodeData.text = text;
+            }
+            else  if (e.Data.GetDataPresent(DataFormats.UnicodeText, false)) {
+                text = (string)e.Data.GetData(DataFormats.UnicodeText);
+                TreeNode newNode =  this.state.addNewNode("Note", targetNode, "note");
+                TreeData newNodeData = this.state.getNodeData(newNode);
+                newNodeData.text = text;
+            } else if (e.Data.GetDataPresent(DataFormats.Text, false)) {
+                text = (string)e.Data.GetData(DataFormats.Text);
+                TreeNode newNode = this.state.addNewNode("Note", targetNode, "note");
+                TreeData newNodeData = this.state.getNodeData(newNode);
+                newNodeData.text = text;
+            } else if (e.Data.GetDataPresent(DataFormats.FileDrop, false)) {
+                string[] files = (string[])(e.Data.GetData(DataFormats.FileDrop, false));
+
+                foreach (string file in files)
+                {
+                    string path = file;
+
+                    TreeNode newNode = this.state.addNewNode(Os.GetFileName(path), targetNode, "link");
+                    TreeData newNodeData = this.state.getNodeData(newNode);
+                    newNodeData.text = path;
+                }
+            }
+
             Rectangle targetNodeBounds = targetNode.Bounds;
 
             int blockSize = targetNodeBounds.Height / 3;
@@ -690,11 +742,6 @@ namespace Notebook
             bool addNodeUp = (targetPoint.Y < targetNodeBounds.Y + blockSize);
             bool addNodeIn = (targetNodeBounds.Y + blockSize <= targetPoint.Y && targetPoint.Y < targetNodeBounds.Y + 2 * blockSize);
             bool addNodeDown = (targetNodeBounds.Y + 2 * blockSize <= targetPoint.Y);
-
-            if (e.Data.GetDataPresent(DataFormats.Text, false))
-            {
-                string text = (string)(e.Data.GetData(DataFormats.Text, false));
-            }
 
             if (targetNode == null)
             {
@@ -725,7 +772,7 @@ namespace Notebook
                 {
                     int previousNodeIndex = targetNode.Parent.Nodes.IndexOf(targetNode) - 1;
 
-                    // mov to nodebefore target node as last child
+                    // move to node before target node as last child
                     if (previousNodeIndex >= 0 && targetNode.Parent.Nodes[previousNodeIndex].Nodes.Count > 0 && targetNode.Parent.Nodes[previousNodeIndex].IsExpanded)
                     {
                         TreeNode previousNode = targetNode.Parent.Nodes[previousNodeIndex];
@@ -897,6 +944,48 @@ namespace Notebook
             }
         }
 
+        public class NodeSorter : IComparer
+        {
+            TreeNode parentNode = null;
+
+            public NodeSorter(TreeNode parentNode) {
+                this.parentNode = parentNode;
+            }
+
+            public int Compare(object x, object y)
+            {
+                TreeNode tx = x as TreeNode;
+                TreeNode ty = y as TreeNode;
+
+                if (tx.Parent != this.parentNode || ty.Parent != this.parentNode) {
+                    return 0;
+                }
+
+                if (tx.Name == null || ty.Name == null)
+                    return 0;
+
+                int comparison = String.Compare(tx.Text, ty.Text, comparisonType: StringComparison.OrdinalIgnoreCase);
+
+                if (comparison < 0)
+                    return -1;
+                else if (comparison > 0)
+                    return 1;
+                else
+                    return 0;
+            }
+        }
+
+        private void sortToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (treeView.SelectedNode == null)
+            {
+                return;
+            }
+
+            treeView.TreeViewNodeSorter = new NodeSorter(treeView.SelectedNode);
+            treeView.Sort();
+        }
+
         private void folderToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (treeView.SelectedNode != null)
@@ -906,6 +995,8 @@ namespace Notebook
                 if (!treeData.isroot && !treeData.folder) {
                     treeData.folder = true;
                     treeData.note = false;
+                    treeData.isLink = false;
+                    treeData.isUrl = false;
 
                     treeView.SelectedNode.ImageIndex = 2;
                     treeView.SelectedNode.SelectedImageIndex = 2;
@@ -913,8 +1004,6 @@ namespace Notebook
 
                     this.Modified();
                 }
-
-                
             }
         }
 
@@ -926,8 +1015,10 @@ namespace Notebook
 
                 if (!treeData.isroot && !treeData.note)
                 {
-                    treeData.folder = true;
-                    treeData.note = false;
+                    treeData.folder = false;
+                    treeData.note = true;
+                    treeData.isLink = false;
+                    treeData.isUrl = false;
 
                     treeView.SelectedNode.ImageIndex = 1;
                     treeView.SelectedNode.SelectedImageIndex = 1;
@@ -936,6 +1027,159 @@ namespace Notebook
                 }
 
 
+            }
+        }
+
+        private void urlToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (treeView.SelectedNode != null)
+            {
+                TreeData treeData = this.state.getNodeData(treeView.SelectedNode);
+
+                if (!treeData.isroot && !treeData.isUrl)
+                {
+                    treeData.folder = false;
+                    treeData.note = false;
+                    treeData.isLink = false;
+                    treeData.isUrl = true;
+
+                    treeView.SelectedNode.ImageIndex = 4;
+                    treeView.SelectedNode.SelectedImageIndex = 4;
+                    treeView.SelectedNode.ImageKey = "url.png";
+                    this.Modified();
+                }
+            }
+        }
+
+        private void linkToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (treeView.SelectedNode != null)
+            {
+                TreeData treeData = this.state.getNodeData(treeView.SelectedNode);
+
+                if (!treeData.isroot && !treeData.isLink)
+                {
+                    treeData.folder = false;
+                    treeData.note = false;
+                    treeData.isLink = true;
+                    treeData.isUrl = false;
+
+                    treeView.SelectedNode.ImageIndex = 3;
+                    treeView.SelectedNode.SelectedImageIndex = 3;
+                    treeView.SelectedNode.ImageKey = "link.png";
+                    this.Modified();
+                }
+            }
+        }
+
+        private void editToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TreeNode selected = treeView.SelectedNode;
+
+
+            if (selected == null)
+            {
+                return;
+            }
+
+            this.state.opentNodeTab(selected);
+        }
+
+        private void pasteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            TreeNode targetNode = treeView.SelectedNode;
+
+            if (targetNode == null)
+            {
+                return;
+            }
+
+            IDataObject data_object = Clipboard.GetDataObject();
+
+            if (data_object.GetDataPresent("UniformResourceLocator", false))
+            {
+                object data = data_object.GetData("UniformResourceLocator");
+                MemoryStream ms = data as MemoryStream;
+                byte[] bytes = ms.ToArray();
+                Encoding encod = Encoding.ASCII;
+                String url = encod.GetString(bytes);
+                string text = url.Substring(0, url.IndexOf('\0'));
+
+                TreeNode newNode = this.state.addNewNode("Note", targetNode, "url");
+                TreeData newNodeData = this.state.getNodeData(newNode);
+                newNodeData.text = text;
+            }
+            else if (data_object.GetDataPresent(DataFormats.Html, false))
+            {
+                string text = (string)data_object.GetData(DataFormats.Text);
+                TreeNode newNode = this.state.addNewNode("Note", targetNode, "note");
+                TreeData newNodeData = this.state.getNodeData(newNode);
+                newNodeData.text = text;
+            }
+            else if (data_object.GetDataPresent(DataFormats.UnicodeText, false))
+            {
+                string text = (string)data_object.GetData(DataFormats.UnicodeText);
+                TreeNode newNode = this.state.addNewNode("Note", targetNode, "note");
+                TreeData newNodeData = this.state.getNodeData(newNode);
+                newNodeData.text = text;
+
+                if (Patterns.IsURL(text))
+                {
+                    this.state.setType(newNode, "url");
+                    string title = Network.GetWebPageTitle(text);
+                    newNode.Text = title;
+
+                }
+                else if (Os.FileExists(text))
+                {
+                    this.state.setType(newNode, "link");
+                    string title = Os.GetFileNameWithoutExtension(text);
+                    newNode.Text = title;
+                }
+                else if (Os.DirectoryExists(text))
+                {
+                    this.state.setType(newNode, "link");
+                    string title = Os.GetDirectoryName(text);
+                    newNode.Text = title;
+                }
+            }
+            else if (data_object.GetDataPresent(DataFormats.Text, false))
+            {
+                string text = (string)data_object.GetData(DataFormats.Text);
+                TreeNode newNode = this.state.addNewNode("Note", targetNode, "note");
+                TreeData newNodeData = this.state.getNodeData(newNode);
+                newNodeData.text = text;
+
+                if (Patterns.IsURL(text))
+                {
+                    this.state.setType(newNode, "url");
+                    string title = Network.GetWebPageTitle(text);
+                    newNode.Text = title;
+                }
+                else if (Os.FileExists(text))
+                {
+                    this.state.setType(newNode, "link");
+                    string title = Os.GetFileNameWithoutExtension(text);
+                    newNode.Text = title;
+                }
+                else if (Os.DirectoryExists(text))
+                {
+                    this.state.setType(newNode, "link");
+                    string title = Os.GetDirectoryName(text);
+                    newNode.Text = title;
+                }
+            } else if (data_object.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[]) data_object.GetData(DataFormats.FileDrop);
+                foreach (string file in files)
+                {
+                    string path = file;
+
+                    TreeNode newNode = this.state.addNewNode(Os.GetFileName(path), targetNode, "link");
+                    TreeData newNodeData = this.state.getNodeData(newNode);
+                    newNodeData.text = path;
+                }
             }
         }
 
@@ -1038,6 +1282,7 @@ namespace Notebook
             e.DrawFocusRectangle();
         }
 
+
         // TABS MENU
 
         private void locateToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1100,6 +1345,18 @@ namespace Notebook
 
             this.state.closeTab(selected);
         }
+
+        private void insertTimestampToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (tabControl.SelectedTab == null)
+            {
+                return;
+            }
+
+            TabData tabData = this.state.getTabData(tabControl.SelectedTab);
+            tabData.textBox.ReplaceSelection(" " + DateTime.Now.ToString("s") + " ");
+        }
+
 
 
         // TIMER

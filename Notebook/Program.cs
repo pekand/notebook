@@ -9,6 +9,8 @@ namespace Notebook
 {
     static class Program
     {
+        public static FormConsole console = null;
+
 
         public static FormNotebook formNotebook = null;
         /// <summary>
@@ -22,7 +24,7 @@ namespace Notebook
 #else
             string appID = "NOTEBOOK_ZHE4JRDLA4YAXMN8TO2DM4PTMBLM2L11";
 #endif
-
+            
             bool createdNew = false;
             using (Mutex mutex = new Mutex(true, appID, out createdNew))
             {
@@ -30,6 +32,8 @@ namespace Notebook
                 {
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
+                    console = new FormConsole();
+                    console.Write("AppId: " + appID);
                     formNotebook = new FormNotebook();
                     Application.Run(formNotebook);
                 }

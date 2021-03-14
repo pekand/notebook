@@ -55,7 +55,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="src\convert\Convert.cs" />
+    <Compile Include="src\forms\FormConsole.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="src\forms\FormConsole.Designer.cs">
+      <DependentUpon>FormConsole.cs</DependentUpon>
+    </Compile>
+    <Compile Include="src\tools\Convert.cs" />
     <Compile Include="src\forms\FormNotebook.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -87,10 +93,15 @@
     <Compile Include="src\model\SearchResult.cs" />
     <Compile Include="src\model\TabData.cs" />
     <Compile Include="src\model\TreeData.cs" />
-    <Compile Include="src\system\Os.cs" />
-    <Compile Include="src\time\Time.cs" />
+    <Compile Include="src\tools\Patterns.cs" />
+    <Compile Include="src\tools\Network.cs" />
+    <Compile Include="src\tools\Os.cs" />
+    <Compile Include="src\tools\Time.cs" />
     <Compile Include="src\tools\Media.cs" />
     <Compile Include="src\tools\Uid.cs" />
+    <EmbeddedResource Include="src\forms\FormConsole.resx">
+      <DependentUpon>FormConsole.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="src\forms\FormNotebook.resx">
       <DependentUpon>FormNotebook.cs</DependentUpon>
     </EmbeddedResource>
