@@ -122,7 +122,7 @@ namespace Notebook
             SearchResult searchResult = (SearchResult)listBox1.Items[e.Index];
 
             e.DrawBackground();
-            e.Graphics.DrawString(searchResult.ToString().Replace("\r\n", "").Replace("\r", "").Replace("\n", ""), new Font("Consolas", 12, FontStyle.Regular), Brushes.Black, e.Bounds);
+            e.Graphics.DrawString(searchResult.ToString().Replace("\r\n", "««").Replace("\r", "«").Replace("\n", "«"), new Font("Consolas", 12, FontStyle.Regular), Brushes.Black, e.Bounds);
             e.DrawFocusRectangle();
         }
 

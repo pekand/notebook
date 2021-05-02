@@ -1155,6 +1155,7 @@ namespace Notebook
                     this.state.setType(newNode, "url");
                     string title = Network.GetWebPageTitle(text);
                     newNode.Text = title;
+                    newNodeData.name = title;
 
                 }
                 else if (Os.FileExists(text))
@@ -1162,12 +1163,14 @@ namespace Notebook
                     this.state.setType(newNode, "link");
                     string title = Os.GetFileNameWithoutExtension(text);
                     newNode.Text = title;
+                    newNodeData.name = title;
                 }
                 else if (Os.DirectoryExists(text))
                 {
                     this.state.setType(newNode, "link");
                     string title = Os.GetDirectoryName(text);
                     newNode.Text = title;
+                    newNodeData.name = title;
                 }
             }
             else if (data_object.GetDataPresent(DataFormats.Text, false))
@@ -1182,18 +1185,21 @@ namespace Notebook
                     this.state.setType(newNode, "url");
                     string title = Network.GetWebPageTitle(text);
                     newNode.Text = title;
+                    newNodeData.name = title;
                 }
                 else if (Os.FileExists(text))
                 {
                     this.state.setType(newNode, "link");
                     string title = Os.GetFileNameWithoutExtension(text);
                     newNode.Text = title;
+                    newNodeData.name = title;
                 }
                 else if (Os.DirectoryExists(text))
                 {
                     this.state.setType(newNode, "link");
                     string title = Os.GetDirectoryName(text);
                     newNode.Text = title;
+                    newNodeData.name = title;
                 }
             } else if (data_object.GetDataPresent(DataFormats.FileDrop))
             {
@@ -1213,6 +1219,22 @@ namespace Notebook
 
         private void tabControl_MouseDown(object sender, MouseEventArgs e)
         {
+
+            TabPage checkTab = null;
+
+            for (int i = 0; i < this.tabControl.TabPages.Count; ++i)
+            {
+                if (this.tabControl.GetTabRect(i).Contains(e.Location))
+                {
+                    checkTab = tabControl.TabPages[i];
+                    break;
+                }
+            }
+
+            if (checkTab != null) {
+                this.state.selectTab(checkTab);
+            }
+
 
             for (int i = 0; i < this.tabControl.TabPages.Count; i++)
             {
@@ -1327,7 +1349,15 @@ namespace Notebook
                 return;
             }
 
+            this.treeView.SuspendLayout();
             this.treeView.SelectedNode = tadData.node;
+            TreeNode node = this.treeView.SelectedNode.Parent;
+            while (node != null) {
+                node.Expand();
+                node = node.Parent;
+            }
+            this.treeView.ResumeLayout();
+
             tadData.node.EnsureVisible();
         }
 

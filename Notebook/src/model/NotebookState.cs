@@ -216,15 +216,18 @@ namespace Notebook
 
                 tabData.node = node;
 
+                tabData.textBox.EolMode = Eol.Lf;
+                tabData.textBox.ConvertEols(Eol.Lf);
+
                 if (node != null)
                 {
                     tabData.nodeid = treeData.id;
-                    tabData.textBox.Text = treeData.text;
+                    tabData.textBox.Text = treeData.text.Replace("\r\n", "\n");
                     treeData.tabData = tabData;
                 }
                 else
                 {
-                    tabData.textBox.Text = tabData.text;
+                    tabData.textBox.Text = tabData.text.Replace("\r\n", "\n");
                 }
 
 
@@ -661,6 +664,9 @@ namespace Notebook
             tabData.name = name;
             tabData.node = node;
 
+            tabData.textBox.EolMode = Eol.Lf;
+            tabData.textBox.ConvertEols(Eol.Lf);
+
             if (node != null)
             {
                 TreeData treeData = (TreeData)node.Tag;
@@ -697,11 +703,12 @@ namespace Notebook
 
             SendMessage(tabData.textBox.Handle, EM_SETTABSTOPS, 1,
             new int[] { 4 * 4 });
-
+            tabControl.SuspendLayout();
             tabData.tabPage.Controls.Add(tabData.textBox);
             tabControl.TabPages.Add(tabData.tabPage);
             tabControl.SelectedTab = tabData.tabPage;
             tabData.tabPage.Tag = tabData;
+            tabControl.ResumeLayout();
 
             return tabData;
         }
@@ -777,6 +784,8 @@ namespace Notebook
                 nodeData.tabData = null;
             }
 
+            tabControl.SuspendLayout();
+
             tabControl.TabPages.Remove(tab);
 
             if (tabControl.TabCount > 0)
@@ -790,6 +799,8 @@ namespace Notebook
                     this.selectTab((TabPage)tabControl.GetControl(tabControl.TabCount - 1));
                 }
             }
+
+            tabControl.ResumeLayout();
         }
 
 

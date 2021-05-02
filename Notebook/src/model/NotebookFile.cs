@@ -202,8 +202,7 @@ namespace Notebook
                                 {
                                     tabData.text = tabElement.Value
                                         .Replace("\r\n", "\n")
-                                        .Replace("\r", "\n")
-                                        .Replace("\n", "\r\n");
+                                        .Replace("\r", "\n");
                                 }
 
                                 if (tabElement.Name.ToString() == "selected")
@@ -250,8 +249,7 @@ namespace Notebook
                         {
                             treeData.text = nodeElement.Value
                                 .Replace("\r\n", "\n")
-                                .Replace("\r", "\n")
-                                .Replace("\n", "\r\n");
+                                .Replace("\r", "\n");
                         }
 
                         if (nodeElement.Name.ToString() == "expanded")
