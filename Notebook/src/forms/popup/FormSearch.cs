@@ -47,9 +47,16 @@ namespace Notebook
 
             this.listBox1.Items.Clear();
 
+            int maxCount = 2000;
             foreach (SearchResult result in results)
             {
                 this.listBox1.Items.Add(result);
+
+                maxCount--;
+
+                if (maxCount == 0) {
+                    break;
+                }
             }
         }
 
@@ -63,7 +70,9 @@ namespace Notebook
 
         private void textBoxSearch_TextChanged(object sender, EventArgs e)
         {
-            this.search(this.textBoxSearch.Text);
+            if (this.textBoxSearch.Text.Trim().Length > 3) {
+                this.search(this.textBoxSearch.Text);
+            }
         }
 
         public void searchNext() {
@@ -108,14 +117,6 @@ namespace Notebook
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        private void FormSearch_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.F3)
-            {
-                
-            }
-        }
-
         private void listBox1_DrawItem(object sender, DrawItemEventArgs e)
         {
 
@@ -129,6 +130,14 @@ namespace Notebook
         private void FormSearch_Resize(object sender, EventArgs e)
         {
             this.listBox1.Invalidate();
+        }
+
+        private void textBoxSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.Enter)
+            {
+                this.search(this.textBoxSearch.Text);
+            }
         }
     }
 }

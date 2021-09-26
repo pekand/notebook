@@ -15,10 +15,6 @@ namespace Notebook
 
         private NotebookState state = null;
 
-        private GlobalOptions options = new GlobalOptions();
-
-        //private Options options = new Options();
-
         private bool isDoubleClick = false;
 
         private bool saveWindowPosition = false;
@@ -31,9 +27,7 @@ namespace Notebook
         // FORM
         private void FormNotebook_Load(object sender, EventArgs e)
         {
-            this.options.LoadConfigFile();
-
-            this.TopMost = this.options.mostTop;
+            this.TopMost = Program.options.mostTop;
 
             this.tabControl.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
 
@@ -116,7 +110,7 @@ namespace Notebook
             }
 
             this.saveNotebook();
-            this.options.SaveConfigFile();
+            Program.options.SaveConfigFile();
         }
 
         private void splitContainer_SplitterMoved(object sender, SplitterEventArgs e)
@@ -228,7 +222,7 @@ namespace Notebook
 
         private bool CanPin() {
             return
-                this.options.enablePin &&
+                Program.options.enablePin &&
                 enablePin && 
                 !isPinned && 
                 (this.formSearch == null || !this.formSearch.Visible) &&
@@ -464,21 +458,21 @@ namespace Notebook
 
         private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            pinWindowToolStripMenuItem.Checked = this.options.enablePin;
-            mostTopToolStripMenuItem.Checked = this.options.mostTop;
+            pinWindowToolStripMenuItem.Checked = Program.options.enablePin;
+            mostTopToolStripMenuItem.Checked = Program.options.mostTop;
         }
 
         private void mostTopToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this.options.mostTop = !this.options.mostTop;
-            this.TopMost = this.options.mostTop;
-            mostTopToolStripMenuItem.Checked = this.options.mostTop;
+            Program.options.mostTop = !Program.options.mostTop;
+            this.TopMost = Program.options.mostTop;
+            mostTopToolStripMenuItem.Checked = Program.options.mostTop;
         }
 
         private void pinWindowToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this.options.enablePin = !this.options.enablePin;
-            pinWindowToolStripMenuItem.Checked = this.options.enablePin;
+            Program.options.enablePin = !Program.options.enablePin;
+            pinWindowToolStripMenuItem.Checked = Program.options.enablePin;
         }
 
         // SHORTCUT
@@ -578,7 +572,7 @@ namespace Notebook
             } 
             else if (treeData.isLink) 
             {
-                Os.OpenDirectory(treeData.text);
+                Os.Process.OpenDirectory(treeData.text);
             } 
             else if (treeData.isroot || treeData.note || treeData.folder)
             {
@@ -755,7 +749,7 @@ namespace Notebook
                 {
                     string path = file;
 
-                    TreeNode newNode = this.state.addNewNode(Os.GetFileName(path), targetNode, "link");
+                    TreeNode newNode = this.state.addNewNode(Os.Path.File.GetFileName(path), targetNode, "link");
                     TreeData newNodeData = this.state.getNodeData(newNode);
                     newNodeData.text = path;
                 }
@@ -1158,17 +1152,17 @@ namespace Notebook
                     newNodeData.name = title;
 
                 }
-                else if (Os.FileExists(text))
+                else if (Os.Path.File.Exists(text))
                 {
                     this.state.setType(newNode, "link");
-                    string title = Os.GetFileNameWithoutExtension(text);
+                    string title = Os.Path.File.GetFileNameWithoutExtension(text);
                     newNode.Text = title;
                     newNodeData.name = title;
                 }
-                else if (Os.DirectoryExists(text))
+                else if (Os.Path.Directory.Exists(text))
                 {
                     this.state.setType(newNode, "link");
-                    string title = Os.GetDirectoryName(text);
+                    string title = Os.Path.Directory.GetDirectoryName(text);
                     newNode.Text = title;
                     newNodeData.name = title;
                 }
@@ -1187,17 +1181,17 @@ namespace Notebook
                     newNode.Text = title;
                     newNodeData.name = title;
                 }
-                else if (Os.FileExists(text))
+                else if (Os.Path.File.Exists(text))
                 {
                     this.state.setType(newNode, "link");
-                    string title = Os.GetFileNameWithoutExtension(text);
+                    string title = Os.Path.File.GetFileNameWithoutExtension(text);
                     newNode.Text = title;
                     newNodeData.name = title;
                 }
-                else if (Os.DirectoryExists(text))
+                else if (Os.Path.Directory.Exists(text))
                 {
                     this.state.setType(newNode, "link");
-                    string title = Os.GetDirectoryName(text);
+                    string title = Os.Path.Directory.GetDirectoryName(text);
                     newNode.Text = title;
                     newNodeData.name = title;
                 }
@@ -1208,7 +1202,7 @@ namespace Notebook
                 {
                     string path = file;
 
-                    TreeNode newNode = this.state.addNewNode(Os.GetFileName(path), targetNode, "link");
+                    TreeNode newNode = this.state.addNewNode(Os.Path.File.GetFileName(path), targetNode, "link");
                     TreeData newNodeData = this.state.getNodeData(newNode);
                     newNodeData.text = path;
                 }

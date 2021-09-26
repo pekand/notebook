@@ -44,12 +44,8 @@ namespace Notebook
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Notebook";
             this.TopMost = true;
-            this.Activated += new System.EventHandler(this.FormPopup_Activated);
-            this.Deactivate += new System.EventHandler(this.FormPopup_Deactivate);
             this.Load += new System.EventHandler(this.FormPopup_Load);
-            this.Click += new System.EventHandler(this.FormPopup_Click);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.FormPin_Paint);
-            this.DoubleClick += new System.EventHandler(this.FormPopup_DoubleClick);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.FormPopup_MouseDown);
             this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.FormPopup_MouseMove);
             this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.FormPopup_MouseUp);

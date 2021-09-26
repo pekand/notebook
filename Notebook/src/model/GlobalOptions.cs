@@ -30,30 +30,30 @@ namespace Notebook
         public string getDefaultFilePath()
         {
             // use local config file
-            string localOptionFilePath = Os.Combine(
-                Os.GetCurrentApplicationDirectory(),
+            string localOptionFilePath = Os.Path.Combine(
+                Os.Assembly.GetCurrentApplicationDirectory(),
                 this.defaultFileName
             );
 
-            if (Os.FileExists(localOptionFilePath))
+            if (Os.Path.File.Exists(localOptionFilePath))
             {
                 return localOptionFilePath;
             }
             else
             {
 
-                string globalConfigDirectory = Os.Combine(
-                    Os.GetApplicationsDirectory(),
+                string globalConfigDirectory = Os.Path.Combine(
+                    Os.Assembly.GetApplicationsDirectory(),
                     this.configFileDirectory
                 );
 
                 // create global config directory if not exist
-                if (!Os.DirectoryExists(globalConfigDirectory))
+                if (!Os.Path.Directory.Exists(globalConfigDirectory))
                 {
-                    Os.CreateDirectory(globalConfigDirectory);
+                    Os.Path.Directory.Create(globalConfigDirectory);
                 }
 
-                return Os.Combine(
+                return Os.Path.Combine(
                     globalConfigDirectory,
                     this.defaultFileName
                 );
@@ -65,7 +65,7 @@ namespace Notebook
 
             string defaultFilePath = this.getDefaultFilePath();
 
-            if (Os.FileExists(defaultFilePath))
+            if (Os.Path.File.Exists(defaultFilePath))
             {
 
                 return true;
@@ -79,7 +79,7 @@ namespace Notebook
 
             string configPath = this.getDefaultFilePath();
 
-            if (Os.FileExists(configPath))
+            if (Os.Path.File.Exists(configPath))
             {
                 this.LoadXmlConfigFile(configPath);
             }
@@ -89,10 +89,10 @@ namespace Notebook
         {
             try
             {
-                if (Os.FileExists(path))
+                if (Os.Path.File.Exists(path))
                 {
 
-                    string xml = Os.GetFileContent(path);
+                    string xml = Os.Path.File.GetFileContent(path);
 
                     XmlReaderSettings xws = new XmlReaderSettings
                     {

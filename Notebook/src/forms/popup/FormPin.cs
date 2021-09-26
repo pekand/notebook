@@ -17,11 +17,6 @@ namespace Notebook
             InitializeComponent();
         }
 
-        private void FormPopup_Activated(object sender, EventArgs e)
-        {
-
-        }
-
         private void FormPopup_Load(object sender, EventArgs e)
         {
             this.Width = 50;
@@ -30,21 +25,6 @@ namespace Notebook
             this.TransparencyKey = Color.White;
             this.BackColor = Color.White;
 
-        }
-
-        private void FormPopup_Deactivate(object sender, EventArgs e)
-        {
-            
-        }
-
-        private void FormPopup_Click(object sender, EventArgs e)
-        {
-            
-        }
-
-        private void FormPopup_DoubleClick(object sender, EventArgs e)
-        {
-            
         }
 
         private bool mouseDown;

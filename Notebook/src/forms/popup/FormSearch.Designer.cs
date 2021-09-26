@@ -80,6 +80,7 @@ namespace Notebook
             this.textBoxSearch.Size = new System.Drawing.Size(317, 26);
             this.textBoxSearch.TabIndex = 0;
             this.textBoxSearch.TextChanged += new System.EventHandler(this.textBoxSearch_TextChanged);
+            this.textBoxSearch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxSearch_KeyDown);
             // 
             // buttonSearch
             // 
@@ -116,7 +117,6 @@ namespace Notebook
             this.Name = "FormSearch";
             this.Text = "Search";
             this.Load += new System.EventHandler(this.FormSearch_Load);
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.FormSearch_KeyDown);
             this.Resize += new System.EventHandler(this.FormSearch_Resize);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel2.ResumeLayout(false);

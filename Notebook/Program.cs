@@ -9,6 +9,8 @@ namespace Notebook
 {
     static class Program
     {
+        public static GlobalOptions options = new GlobalOptions();
+
         public static FormConsole console = null;
 
 
@@ -24,7 +26,9 @@ namespace Notebook
 #else
             string appID = "NOTEBOOK_ZHE4JRDLA4YAXMN8TO2DM4PTMBLM2L11";
 #endif
-            
+
+            Program.options.LoadConfigFile();
+
             bool createdNew = false;
             using (Mutex mutex = new Mutex(true, appID, out createdNew))
             {
