@@ -29,43 +29,53 @@ namespace Notebook
             string result = this.searchFor;
 
             if (inTitle) {
-                int start = this.position - 20;
 
+                int start = this.position;
+                int end = this.position;
 
-                if (start < 0)
-                {
-                    start = 0;
+                while (start > 0) {
+                    start--;
+                    if (nodeText[start] == '\n') {
+                        break;
+                    }
                 }
 
-                int length = 40 + this.searchFor.Length;
-
-                if (start + length > nodeText.Length)
+                while (end < nodeText.Length - 1)
                 {
-                    length = nodeText.Length - start;
+                    end++;
+                    if (nodeText[end] == '\n')
+                    {
+                        break;
+                    }
                 }
 
-                string t = nodeText.Substring(start, length);
-                result = "@"+this.position.ToString()+":"+ t;
+                result = nodeText.Substring(start, end - start + 1).Trim();
             }
 
             if (inContent)
             {
+                int start = this.position;
+                int end = this.position;
 
-                int start = this.position - 20;
-                
-
-                if (start < 0) {
-                    start = 0;
+                while (start > 0)
+                {
+                    start--;
+                    if (contentText[start] == '\n')
+                    {
+                        break;
+                    }
                 }
 
-                int length = 40 + this.searchFor.Length;
-
-                if (start + length > contentText.Length) {
-                    length = contentText.Length - start;
+                while (end < contentText.Length - 1)
+                {
+                    end++;
+                    if (contentText[end] == '\n')
+                    {
+                        break;
+                    }
                 }
 
-                string t = contentText.Substring(start, length);
-                result = "#" + this.position.ToString() + ":" + t;
+                result = contentText.Substring(start, end - start + 1).Trim();
             }
 
             return result;
